@@ -584,9 +584,9 @@ $view->addArguments([
 ]);
 ```
 
-### Extends
+### Extending the template
 
-Para extender un template se utiliza el método `View::extend`, este método recibe tres parámetros; el nombre del template que extenderá al template principal, los parámetros que se enviarán, y un alias único que se invocará en el template principal.
+Para extender un template se utiliza el método `View::extendWith`, este método recibe tres parámetros; el nombre del template que extenderá al template principal, los parámetros que se enviarán, y un alias único con el que se incluirá en el template principal.
 
 ```php
 $data = [
@@ -596,7 +596,7 @@ $data = [
 ];
 // Se guarda el template menu.php con el alias 'menu_lateral' y se le envian parámetros en la variable $data
 $view->template('index.php', ['title' => 'Ejemplo de vistas']);
-$view->extend('menu', $data, 'menu_lateral');
+$view->extendWith('menu', $data, 'menu_lateral');
 $view->render();
 ```
 

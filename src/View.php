@@ -19,7 +19,7 @@ use function Forge\functions\add_trailing_slash;
  * @method View addArgument(string $key, $value) Add a parameter
  * @method View addArguments(array $arguments) Add parameters array
  * @method View template(string $file, array $variables = []) Set a view to render
- * @method View extend(string $file, array $variables = array(), string $extend_name) Add a view to buffer to extend a main view
+ * @method View extendWith(string $file, array $variables = array(), string $extend_name) Add a view to buffer to extend a main view
  * @method string render() Returns a fetched view in buffer to render
  */
 class View {
@@ -115,7 +115,7 @@ class View {
      * @param string $extend_name View name
      * @return View
      */
-    public function extend(string $file, array $variables = array(), string $extend_name): View {
+    public function extendWith(string $file, array $variables = array(), string $extend_name): View {
         $this->addArgument($extend_name, $this->render($file, $variables));
 
         return $this;
