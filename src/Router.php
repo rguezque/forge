@@ -179,14 +179,14 @@ class Router {
     }
 
     /**
-     * Add routes group with a common namespace
+     * Add routes group with a common prefix
      * 
-     * @param string $namespace Group namespace
+     * @param string $prefix Group prefix
      * @param Closure $closure Closure with routes definition
      * @return Router
      */
-    public function addRouteGroup(string $namespace, Closure $closure): Router {
-        $this->routes_group[] = new RouteGroup($namespace, $closure, $this);
+    public function addRouteGroup(string $prefix, Closure $closure): Router {
+        $this->routes_group[] = new RouteGroup($prefix, $closure, $this);
         return $this;
     }
 
@@ -297,8 +297,10 @@ class Router {
      * @return void
      */
     private function resolveRouteGroups() {
-        foreach($this->routes_group as $group) {
-            $group();
+        if([] !== $this->routes_group) {
+            foreach($this->routes_group as $group) {
+                $group();
+            }
         }
     }
 
@@ -333,7 +335,7 @@ class Router {
         }
 
         if([] !== $matches) {
-            $params['_matches'] = $matches;
+            $params['@matches'] = $matches;
         }
     }
 

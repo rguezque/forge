@@ -127,7 +127,7 @@ $router->addRouteGroup('/foo', function(RouteGroup $group) {
 
 ### Wildcards[^2]
 
-Si una ruta tiene *wildcards*, se recuperan en un objeto `Bag` (Ver [The Bag Class](#thebagclass)) a través del método `Request::getParameters` y pueden ser tomados a través de `Bag::get` usando como clave el parámetro nombrado con que fueron definidos en la ruta. Si la ruta tiene *wildcards* como expresiones regulares (RegEx) se recuperan con la clave `_matches` que devuelve un array lineal con los valores enumerados en orden de *match*.
+Si una ruta tiene *wildcards*, se recuperan en un objeto `Bag` (Ver [The Bag Class](#thebagclass)) a través del método `Request::getParameters` y pueden ser tomados a través de `Bag::get` usando como clave el parámetro nombrado con que fueron definidos en la ruta. Si la ruta tiene *wildcards* como expresiones regulares (RegEx) se recuperan con la clave `@matches` que devuelve un array lineal con los valores enumerados en orden de *match*.
 
 ```php
 //index.php
@@ -150,7 +150,7 @@ $router->addRoute(new Route(
 //...
 public function holaAction(Request $request, Response $response): Response {
 	$args = $request->getParameters();
-	list($nombre, $apellido) = $args->get('_matches')
+	list($nombre, $apellido) = $args->get('@matches')
     return $response->withContent(sprintf('Hola %s %s', $nombre, $apellido));
 }
 
