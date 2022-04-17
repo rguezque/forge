@@ -237,19 +237,16 @@ class Router {
      * @throws RouteNotFoundException
      */
     private function resolve(Request $request): Response {
-        $server         = $request->getServerParams()->all();
-        $request_uri    = $this->filterRequestUri($server['REQUEST_URI']);
+        $server = $request->getServerParams()->all();
         $request_method = $server['REQUEST_METHOD'];
 
         // Check for valid request method
         if(!in_array($request_method, $this->supported_request_methods)) {
             throw new UnsupportedRequestMethodException(sprintf('The HTTP request method %s isn\'t supported by router.', $request_method));
         }
-    
-        // Trailing slash no matters
-        $request_uri = ('/' !== $request_uri) 
-        ? remove_trailing_slash($request_uri) 
-        : $request_uri;
+
+        // Catch the request uri
+        $request_uri = $this->filterRequestUri($server['REQUEST_URI']);
 
         /**
          * Select the route collection according the request method and implement a generator. 
@@ -315,8 +312,15 @@ class Router {
      * @return string
      */
     private function filterRequestUri(string $uri): string {
-        $uri = parse_url($uri, PHP_URL_PATH);
-        return rawurldecode($uri);
+        // Clean the uri from url-encoded query string
+        $uri = rawurldecode(parse_url($uri, PHP_URL_PATH));
+        
+        // Trailing slash no matters
+        if('/' !== $uri) {
+            $uri = remove_trailing_slash($uri);
+        }
+
+        return $uri;
     }
 
     /**
