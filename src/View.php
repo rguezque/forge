@@ -67,44 +67,40 @@ class View {
      * Set a view to render
      *
      * @param string $file View name
-     * @param array $variables View parameters
+     * @param array $params View parameters
      * @return View
      * @throws FileNotFoundException
      */
-	public function template(string $file, array $variables = []): View {
+	public function template(string $file, array $params = []): View {
         $file = $this->path . $file;
         
         if (!file_exists($file)) {
             throw new FileNotFoundException(sprintf('Don\'t exists the template file "%s".', $file));
         }
 
-        if(is_array($variables) && !empty($variables)) {
-            foreach($variables as $key => $var) {
+        $this->view_file = $file;
+
+        if(is_array($params) && [] !== $params) {
+            foreach($params as $key => $var) {
                 $this->arguments->set($key, $var);
             }
         }
         
-        $this->view_file = $file;
         return $this;
     }
 
     /**
-     * Return a fetched main view in buffer to render
+     * Return as string a fetched main view in buffer to render
      * 
      * @return string
      * @throws MissingArgumentException
      */
     public function render(): string {
-        if(!$this->view_file) {
+        if(!isset($this->view_file)) {
             throw new MissingArgumentException('The view file wasn\'t not declared.');
         }
 
-        extract($this->arguments->all());
-        ob_start();
-        include $this->view_file;
-        $rendered_view = ob_get_clean();
-
-        return $rendered_view;
+        return $this->getRender($this->view_file, $this->arguments->all());
     }
 
     /**
@@ -115,8 +111,9 @@ class View {
      * @param string $extend_name View name
      * @return View
      */
-    public function extendWith(string $file, array $variables = array(), string $extend_name): View {
-        $this->addArgument($extend_name, $this->render($file, $variables));
+    public function extendWith(string $file, array $variables = [], string $extend_name): View {
+        $file = $this->path . $file;
+        $this->addArgument($extend_name, $this->getRender($file, $variables));
 
         return $this;
     }
@@ -158,6 +155,27 @@ class View {
         $this->path = add_trailing_slash($path);
 
         return $this;
+    }
+
+    /**
+     * Return a rendered template as string
+     * 
+     * @param string $template Template name
+     * @param array $params Template parameters
+     * @return string
+     * @throws FileNotFoundException
+     */
+    private function getRender(string $template, array $params = []): string {
+        if (!file_exists($template)) {
+            throw new FileNotFoundException(sprintf('Don\'t exists the template file "%s".', $template));
+        }
+
+        extract($params);
+        ob_start();
+        include $template;
+        $rendered_view = ob_get_clean();
+
+        return $rendered_view;
     }
 
 }

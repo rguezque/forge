@@ -164,7 +164,7 @@ class Router {
             }
 
             if(!str_ends_with($route->getAction(), 'Action')) {
-                throw new BadNameException(sprintf('Action name of the controller must ends with the suffix "Action". Error in "%s::%s()".', $route->getController(), $route->getAction()));
+                throw new BadNameException(sprintf('Action name of the controller must ends with the suffix "Action". Error in "%s::%s"', $route->getController(), $route->getAction()));
             }
         }
 

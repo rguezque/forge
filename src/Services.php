@@ -52,7 +52,7 @@ class Services {
         }
 
         // Check for duplicity 
-        if(array_key_exists($alias, $this->services)) {
+        if($this->has($alias)) {
             throw new DuplicityException(sprintf('Already exists a service with name "%s".', $alias));
         }
 

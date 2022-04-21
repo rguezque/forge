@@ -37,6 +37,14 @@ class InjectorTest extends TestCase {
         $this->assertInstanceOf(View::class, $view);
     }
 
+    public function testParams() {
+        $this->injector->add('suma', function($a, $b) {
+            return $a+$b;
+        });
+        $result = $this->injector->get('suma', [8, 34]);
+        $this->assertIsInt($result);
+    }
+
     public function testHas() {
         $this->injector->add('view', View::class)->addParameter(__DIR__.'/templates');
         $has = $this->injector->has('view');

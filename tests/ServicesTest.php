@@ -2,6 +2,7 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
+use Forge\Exceptions\DuplicityException;
 use Forge\Route\Services;
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +18,7 @@ class ServicesTest extends TestCase {
     }
 
     public function testRegister() {
-        $this->expectException(LogicException::class);
+        $this->expectException(DuplicityException::class);
         
         $this->services->register('pi', function() {
             return 3.1416;

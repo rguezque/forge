@@ -14,13 +14,15 @@ class ViewTest extends TestCase {
     }
 
     public function testRender() {
-        echo $this->view->render('index');
+        $this->view->template('index.php');
+        echo $this->view->render();
         $this->expectOutputString('Hola mundo!');
     }
 
     public function testExtends() {
-        $this->view->extendWith('header', ['message' => 'Hola mundo'], 'message_header');
-        echo $this->view->render('hello');
+        $this->view->extendWith('header.php', ['message' => 'Hola mundo'], 'message_header');
+        $this->view->template('hello.php');
+        echo $this->view->render();
         $this->expectOutputString('<h1>Hola mundo</h1>');
     }
 

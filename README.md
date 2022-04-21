@@ -339,15 +339,15 @@ Emitter::emit($response);
 
 Esta clase permite crear contenedores e inyectar dependencias. Cuenta con cinco métodos:
 
-- `Injector::add`: Recibe el nombre de la dependencia y el nombre de la clase a instanciar así como los parámetros a inyectar. Si solo se envía el nombre de la dependencia se tomará este como la clase a instanciar. También permite agregar un `Closure` como dependencia, en cuyo caso es obligatorio asignar un nombre.
+- `Injector::add`: Recibe el nombre de la dependencia y el nombre de la clase a instanciar así como los parámetros a inyectar. Si solo se envía la clase a instanciar, se toma el nombre de la clase como el nombre de dicha dependencia. También se permite agregar un `Closure` como dependencia, en cuyo caso es obligatorio asignar un nombre.
 - `Injector::addParameter`: Permite agregar un parámetro a una clase agregada al contenedor.
 - `Injector::addParameters`: Permite agregar varios parámetros a una clase agregada al contenedor a través de un array.
-- `Injector::get`: Recupera una dependencia por su nombre.
+- `Injector::get`: Recupera una dependencia por su nombre. Opcionalmente puede recibir como segundo argumento un *array* con argumentos (válgase la redundancia) utilizados por la dependencia solicitada, esto es útil cuando la dependencia es una función cuyo resultado dependerá de parámetros enviados al momento de llamarla. En el caso de que la dependencia sea una clase instanciada, estos argumentos se inyectarán al final, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
 - `Injector::has`: Verifica si existe una dependencia por su nombre.
 
 ## <a name="services_provider">Services Provider</a>
 
-La clase `Services` permite crear un proveedor de servicios. A cada motor de funcionamiento del router (`ApplicationEngine` o `JsonEngine`) se le puede asignar un proveedor con el método `EngineInterface::setServices` desde el cual se podrá tener acceso en toda la aplicación. La diferencia con un contenedor es que el proveedor de servicios inyecta los servicios registrados a cada **método** de un *class controller* y todos los servicios son accesibles en toda la aplicación, mientras que el contenedor solo inyecta las dependencias agregadas al **constructor** de cada controlador o alguna otra clase y solo están disponibles estas dependencias en dicha clase que se inyectan.
+La clase `Services` permite crear un proveedor de servicios. A cada motor de funcionamiento del router (`ApplicationEngine` o `JsonEngine`) se le puede asignar un proveedor con el método `EngineInterface::setServices` desde el cual se podrá tener acceso en toda la aplicación. La diferencia con un contenedor es que el proveedor de servicios inyecta los servicios registrados a cada **método** de un *controller class* y todos los servicios son accesibles en toda la aplicación, mientras que el contenedor solo inyecta las dependencias agregadas al **constructor** de cada clase especificada y solo están disponibles estas dependencias en dicha clase que se inyectan.
 
 ### The `Services` Class
 

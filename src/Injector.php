@@ -8,6 +8,7 @@
 namespace Forge\Route;
 
 use Closure;
+use Forge\Exceptions\ClassNotFoundException;
 use Forge\Exceptions\DependencyNotFoundException;
 use Forge\Exceptions\DuplicityException;
 use ReflectionClass;
@@ -26,7 +27,7 @@ class Injector {
      * 
      * @var Dependency[]
      */
-    private $dependencies = array();
+    private $dependencies = [];
 
     /**
      * Add a dependency to container
@@ -57,8 +58,9 @@ class Injector {
      * @param string $name Dependency name
      * @return object|Closure
      * @throws DependencyNotFoundException
+     * @throws ClassNotFoundException
      */
-    public function get(string $name) {
+    public function get(string $name, array $arguments = []) {
         if(!$this->has($name)) {
             throw new DependencyNotFoundException(sprintf('Don\'t exists a dependency with name "%s".', $name));
         }
@@ -69,27 +71,31 @@ class Injector {
         if($dependency->getDependency() instanceof Closure) {
             $closure = $dependency->getDependency();
 
-            return $closure();
+            return [] !== $arguments ? call_user_func_array($closure, array_values($arguments)) : call_user_func($closure);
         } else {
-            $ref = new ReflectionClass($dependency->getDependency());
+            $class = $dependency->getDependency();
+            if(!class_exists($class)) {
+                throw new ClassNotFoundException(sprintf('Don\'t exists the class "%s".', $class));
+            }
+
+            $class = new ReflectionClass($class);
 
             // If has parameters...
-            if(!empty($dependency->getParameters())) {
-                $temp = array();
-
-                foreach ($dependency->getParameters() as $param) {
-                    // If parameter exists in the container, retrieve recursively
+            $parameters = $dependency->getParameters();
+            if([] !== $parameters) {
+                foreach ($parameters as &$param) {
+                    // If parameter exists in the container as dependency, retrieve recursively
                     if(is_string($param) && $this->has($param)) {
-                        $ref_param = $this->get($param);
-                        $temp[] = $ref_param;
-                    } else { // If parameter don't exists in container
-                        $temp[] = $param;
+                        $param = $this->get($param);
                     }
                 }
-
-                return $ref->newInstanceArgs($temp);
+                
+                if([] !== $arguments) {
+                    $parameters = array_merge($parameters, $arguments);
+                }
+                return $class->newInstanceArgs($parameters);
             } else {
-                return $ref->newInstance();
+                return [] !== $arguments ? $class->newInstanceArgs($arguments) : $class->newInstance();
             }
         }
     }
