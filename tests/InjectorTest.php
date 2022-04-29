@@ -43,6 +43,7 @@ class InjectorTest extends TestCase {
         });
         $result = $this->injector->get('suma', [8, 34]);
         $this->assertIsInt($result);
+        $this->assertEquals(42, $result);
     }
 
     public function testHas() {

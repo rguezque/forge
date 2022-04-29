@@ -19,7 +19,9 @@ use InvalidArgumentException;
  * @method void register(string $alias, Closure $closure) Register services
  * @method void unregister(string ...$alias) Unregister one or multiple services by name
  * @method bool has(string $key) Return true if a service exists
+ * @method array all() Return all services array
  * @method array keys() Return a lineal array with the registered names of services
+ * @method int count() Return the count of services
  */
 class Services {
 
@@ -33,40 +35,42 @@ class Services {
     /**
      * Register services
      * 
-     * @param string $alias Service name
-     * @param Closure $closure Service registered
-     * @return void
+     * @param string $name Service name
+     * @param Closure $closure Service definition
+     * @return Services
      * @throws BadNameException
      * @throws InvalidArgumentException
      * @throws DuplicityException
      */
-    public function register(string $alias, Closure $closure): void {
+    public function register(string $name, Closure $closure): Services {
         // Avoid whitespaces
-        if(strpos($alias, ' ')) {
-            throw new BadNameException(sprintf('Whitespaces not allowed in name definition for service "%s"', $alias));
+        if(strpos($name, ' ')) {
+            throw new BadNameException(sprintf('Whitespaces not allowed in name definition for service "%s"', $name));
         }
 
         // Not allow reserved names
-        if(in_array($alias, get_class_methods($this))) {
-            throw new InvalidArgumentException(sprintf('"%s" is a reserved name for an existent property of %s.', $alias, __CLASS__));
+        if(in_array($name, get_class_methods($this))) {
+            throw new InvalidArgumentException(sprintf('"%s" is a reserved name for an existent property of %s.', $name, __CLASS__));
         }
 
         // Check for duplicity 
-        if($this->has($alias)) {
-            throw new DuplicityException(sprintf('Already exists a service with name "%s".', $alias));
+        if($this->has($name)) {
+            throw new DuplicityException(sprintf('Already exists a service with name "%s".', $name));
         }
 
-        $this->services[$alias] = $closure;
+        $this->services[$name] = $closure;
+
+        return $this;
     }
 
     /**
      * Unregister one or multiple services by name
      * 
-     * @param string ...$alias Service names
+     * @param string ...$names Service names
      * @return void
      */
-    public function unregister(string ...$alias): void {
-        foreach($alias as $name) {
+    public function unregister(string ...$names): void {
+        foreach($names as $name) {
             unset($this->services[$name]);
         }
     }
@@ -74,11 +78,20 @@ class Services {
     /**
      * Return true if a service exists
      * 
-     * @param string $key Service name
+     * @param string $name Service name
      * @return bool
      */
-    public function has(string $key): bool {
-        return array_key_exists($key, $this->services);
+    public function has(string $name): bool {
+        return array_key_exists($name, $this->services);
+    }
+
+    /**
+     * Return all services array
+     * 
+     * @return array
+     */
+    public function all(): array {
+        return $this->services;
     }
 
     /**
@@ -91,34 +104,43 @@ class Services {
     }
 
     /**
+     * Return the count of services
+     * 
+     * @return int
+     */
+    public function count(): int {
+        return count($this->services);
+    }
+
+    /**
      * Allow to access the private services
      * 
-     * @param string $method Method name
-     * @param array $params Method parameters
+     * @param string $name Service name
+     * @param array $params Service parameters
      * @return mixed
      * @throws NotFoundException
      */
-    public function __call(string $method, array $params) {
-        if(!isset($this->services[$method]) && !is_callable($this->services[$method])) {
-            throw new NotFoundException(sprintf('The request service "%s" wasn\'t found.', $method));
+    public function __call(string $name, array $params) {
+        if(!$this->has($name) && !is_callable($this->services[$name])) {
+            throw new NotFoundException(sprintf('The request service "%s" wasn\'t found.', $name));
         }
 
-        return call_user_func($this->services[$method], ...$params);
+        return call_user_func($this->services[$name], ...$params);
     }
 
     /**
      * Allow to acces services in object context
      * 
-     * @param string $method Sevice name
+     * @param string $name Sevice name
      * @return mixed
      * @throws NotFoundException
      */
-    public function __get(string $method) {
-        if(!isset($this->services[$method])) {
-            throw new NotFoundException(sprintf('The request service "%s" wasn\'t found.', $method));
+    public function __get(string $name) {
+        if(!$this->has($name)) {
+            throw new NotFoundException(sprintf('The request service "%s" wasn\'t found.', $name));
         }
 
-        $service = $this->services[$method];
+        $service = $this->services[$name];
 
         return $service();
     }

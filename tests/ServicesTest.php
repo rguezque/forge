@@ -14,6 +14,12 @@ class ServicesTest extends TestCase {
         $this->services = new Services;
         $this->services->register('pi', function() {
             return 3.141592654;
+        })
+        ->register('suma', function(int $a, int $b) {
+            return $a + $b;
+        })
+        ->register('is_even', function(int $x) {
+            return $x % 2 === 0;
         });
     }
 
@@ -28,6 +34,16 @@ class ServicesTest extends TestCase {
     public function testGet() {
         $pi = $this->services->pi();
         $this->assertEquals(3.141592654, $pi);
+    }
+
+    public function testHas() {
+        $this->assertTrue($this->services->has('pi'));
+    }
+
+    public function testUnregister() {
+        $this->assertCount(3, $this->services->all());
+        $this->services->unregister('suma', 'pi');
+        $this->assertCount(1, $this->services->all());
     }
 }
 
