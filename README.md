@@ -1,7 +1,52 @@
 # Forge\Route
 
+Un liviano y básico router php para proyectos rápidos y pequeños.
 
-## Configure WebServer
+**Tabla de contenidos**
+
+- [Configure](#configure)
+- [Routing](#routing)
+- [Routes](#routes)
+  - [Wildcards](#wildcards)
+- [Routes Group](#routes-group)
+- [Controllers](#controllers)
+- [Add namespaces](#add-namespaces)
+- [Engine](#engine)
+  - [Application Engine](#application-engine)
+  - [Json Engine](#json-engine)
+
+- [Dependencies Container](#dependencies-container)
+  - [The `Injector` class](#the-injector-class)
+
+- [Services Provider](#services-provider)
+  - [The `Services` class](#the-services-class)
+
+- [Container vs Services](#container-vs-services)
+- [Uri Generator](#uri-generator)
+- [Request](#request)
+- [Response](#response)
+  - [Json Response](#json-response)
+  - [Redirect Response](#redirect-response)
+
+- [Client Request](#client-request)
+- [Emitter](#emitter)
+- [Data Collection](#data-collection)
+  - [The `Bag` class](#the-bag-class)
+  - [The `Arguments` class](#the-arguments-class)
+  - [The `Globals` class](#the-global-class)
+
+- [Views](#views)
+  - [Template](#template)
+  - [Arguments](#arguments)
+  - [Extending the template](#extending-the-template)
+  - [Render](#render)
+
+- [Configurator](#configurator)
+- [Handler](#handler)
+- [Functions](#functions)
+
+
+## Configure
 
 En **Apache** edita el archivo `.htaccess`  en la raíz del proyecto:
 
@@ -49,9 +94,9 @@ composer dump-autoload
 
 ## Routing
 
-El proceso de enrutamiento consiste en registrar un conjunto de rutas que serán comparadas con el `REQUEST_URI` del lado del cliente (*web browser*) representado por un objeto `Request` (Ver [Request](#requestclass)). Si una ruta coincide se ejecuta la acción asociada con esta, es decir un método de una clase (*controlador*)  que devolverá una respuesta representada por un objeto de `Response` (Ver [Response](#responseclass)). Si la URI solicitada no corresponde con ninguna de las rutas registradas, el router lanzará un <mark>`RouteNotFoundException`</mark>, en cambio si el método de petición no es soportado por el router lanzará un <mark>`UnsupportedRequestMethodException`</mark>.
+El proceso de enrutamiento consiste en registrar un conjunto de rutas que serán comparadas con el `REQUEST_URI` del lado del cliente (*web browser*) representado por un objeto `Request` (Ver [Request](#request)). Si una ruta coincide se ejecuta la acción asociada con esta, es decir un método de una clase (*controlador*)  que devolverá una respuesta representada por un objeto de `Response` (Ver [Response](#response)). Si la URI solicitada no corresponde con ninguna de las rutas registradas, el router lanzará un <mark>`RouteNotFoundException`</mark>, en cambio si el método de petición no es soportado por el router lanzará un <mark>`UnsupportedRequestMethodException`</mark>.
 
-El método `Router::handleRequest` procesa el Request, hace el enrutamiento y devuelve un objeto Response que es enviado al cliente (Ver [Emitter](#emitterclass)).
+El método `Router::handleRequest` procesa el Request, hace el enrutamiento y devuelve un objeto Response que es enviado al cliente (Ver [Emitter](#emitter)).
 
 ```php
 use Application\Http\FooController;
@@ -95,7 +140,7 @@ Emitter::emit($response);
 
 ## Routes
 
-El método `Router::addRoute` permite agregar una ruta. Una ruta se representa por una instancia de `Route`. Esta clase recibe cuatro parámetros obligatorios y uno opcional; un nombre único para la ruta, el *string path*, el nombre del controlador y el nombre del método a ejecutar para dicha ruta. El último parámetro define el método de petición aceptado por el router, por default se presupone que todas las rutas son de tipo `GET`; la otra opción disponible es `POST` (Ver [Configurator](#configuratorclass) si requieres definir o agregar tus propios métodos http de petición aceptados.).
+El método `Router::addRoute` permite agregar una ruta. Una ruta se representa por una instancia de `Route`. Esta clase recibe cuatro parámetros obligatorios y uno opcional; un nombre único para la ruta, el *string path*, el nombre del controlador y el nombre del método a ejecutar para dicha ruta. El último parámetro define el método de petición aceptado por el router, por default se presupone que todas las rutas son de tipo `GET`; la otra opción disponible es `POST` (Ver [Configurator](#configurator) si requieres definir o agregar tus propios métodos http de petición aceptados.).
 
 Por ejemplo si una ruta recibirá una petición `POST`:
 
@@ -123,11 +168,11 @@ $router->addRouteGroup('/foo', function(RouteGroup $group) {
 });
 ```
 
-**Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configurator](#configuratorclass)).
+**Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configurator](#configurator)).
 
 ### Wildcards[^2]
 
-Si una ruta tiene *wildcards*, se recuperan en un objeto `Bag` (Ver [The Bag Class](#thebagclass)) a través del método `Request::getParameters` y pueden ser tomados a través de `Bag::get` usando como clave el parámetro nombrado con que fueron definidos en la ruta. Si la ruta tiene *wildcards* como expresiones regulares (RegEx) se recuperan con la clave `@matches` que devuelve un array lineal con los valores enumerados en orden de *match*.
+Si una ruta tiene *wildcards*, se recuperan en un objeto `Bag` (Ver [The Bag Class](#the-bag-class)) a través del método `Request::getParameters` y pueden ser tomados a través de `Bag::get` usando como clave el parámetro nombrado con que fueron definidos en la ruta. Si la ruta tiene *wildcards* como expresiones regulares (RegEx) se recuperan con la clave `@matches` que devuelve un array lineal con los valores enumerados en orden de *match*.
 
 ```php
 //index.php
@@ -235,13 +280,13 @@ $router->addNamespaces([
 ]);
 ```
 
-## <a name="engine">Engine</a>
+## Engine
 
 El router tiene dos motores de funcionamiento, `ApplicationEngine` (usado por default) y `JsonEngine` , este último permite usar el router como una API. En el primer caso los métodos de cada controlador reciben dos parámetros, `Request` y `Response` y cada método debe devolver un `Response` de lo contrario lanzará un `UnexpectedValueException`. Si una ruta contiene *wildcards* estos son enviados en el `Request` y recuperados con `Request::getParameters`, mientras que el parámetro`Response` proporciona los métodos para generar una respuesta.
 
 En el segundo caso, `JsonEngine` exige que se retorne un *array* asociativo en cada método de los controladores. El router se encarga de convertirlo a formato `json` y generar el respectivo `JsonResponse`.
 
-El motor de funcionamiento se asigna al router con el método `Router::setEngine` que recibe un objeto `EngineInterface`. No es obligatorio definir un motor de funcionamiento, a menos que se use un Contenedor (Ver <a href="#dependencies_container">Dependencies Container</a>) o un Proveedor de Servicios (Ver <a href="#services_provider">Services Provider</a>), o bien, se requiera devolver datos en JSON.
+El motor de funcionamiento se asigna al router con el método `Router::setEngine` que recibe un objeto `EngineInterface`. No es obligatorio definir un motor de funcionamiento, a menos que se use un Contenedor (Ver [Dependencies Container](#dependencies-container)) o un Proveedor de Servicios (Ver [Services Provider](#services-provider)), o bien, se requiera devolver datos en JSON.
 
 ### Application Engine
 
@@ -310,7 +355,7 @@ public function showAction(Request $request): array {
 }
 ```
 
-## <a name="dependencies_container">Dependencies Container</a>
+## Dependencies Container
 
 La clase `Injector` permite crear un contenedor de dependencias. A cada motor de funcionamiento del router (`ApplicationEngine` o `JsonEngine`) se le puede asignar un contenedor con el método `EngineInterface::setContainer` desde el cual se buscarán los controladores (*class controller*) y demás dependencias que serán inyectados al constructor de cada clase. Si no se asigna un contenedor el router generara una instancia de cada controlador con `ReflectionClass::newInstance` asumiendo que no deben inyectarse dependencias.
 
@@ -345,7 +390,7 @@ Esta clase permite crear contenedores e inyectar dependencias. Cuenta con cinco 
 - `Injector::get`: Recupera una dependencia por su nombre. Opcionalmente puede recibir como segundo argumento un *array* con argumentos (válgase la redundancia) utilizados por la dependencia solicitada, esto es útil cuando la dependencia es una función cuyo resultado dependerá de parámetros enviados al momento de llamarla. En el caso de que la dependencia sea una clase instanciada, estos argumentos se inyectarán al final, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
 - `Injector::has`: Verifica si existe una dependencia por su nombre.
 
-## <a name="services_provider">Services Provider</a>
+## Services Provider
 
 La clase `Services` permite crear un proveedor de servicios. A cada motor de funcionamiento del router (`ApplicationEngine` o `JsonEngine`) se le puede asignar un proveedor con el método `EngineInterface::setServices` desde el cual se podrá tener acceso en toda la aplicación. La diferencia con un contenedor es que el proveedor de servicios inyecta los servicios registrados a cada **método** de un *controller class* y todos los servicios son accesibles en toda la aplicación, mientras que el contenedor solo inyecta las dependencias agregadas al **constructor** de cada clase especificada y solo están disponibles estas dependencias en dicha clase que se inyectan.
 
@@ -384,9 +429,9 @@ public function indexAction(Request $request, Response $response, Services $serv
 
 El uso de cada uno dependerá de la preferencia del programador y según convenga. La única regla es que solo se puede implementar uno a la vez, o se elige usar un Contenedor (`EngineInterface::setContainer`) o bien el Proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobre escribirá al primero.
 
-## <a name="urigenerator">Uri Generator</a>
+## Uri Generator
 
-Esta clase permite generar la URI de cada ruta a partir de su nombre y string de la ruta asociada. Los nombres de cada ruta son consultados desde un array asociativo en un objeto `Bag`, donde cada clave es el nombre de las rutas y su valor es el string de la ruta o `path`. Este objeto `Bag` es almacenado en la variable *global* (Ver [Globals](#theglobalsclass)) `'router_route_names_array'` en el momento que se inicia el router.
+Esta clase permite generar la URI de cada ruta a partir de su nombre y string de la ruta asociada. Los nombres de cada ruta son consultados desde un array asociativo en un objeto `Bag`, donde cada clave es el nombre de las rutas y su valor es el string de la ruta o `path`. Este objeto `Bag` es almacenado en la variable *global* (Ver [Globals](#the-globals-class)) `'router_route_names_array'` en el momento que se inicia el router.
 
 ```php
 // Como un servicio
@@ -412,7 +457,7 @@ $this->uri_generator->generate('hola_page', ['nombre' = 'John']);
 // Generará la URI "/hola/John"
 ```
 
-## <a name="requestclass">Request</a>
+## Request
 
 Representa una petición HTTP del lado del servidor.
 
@@ -433,7 +478,7 @@ Representa una petición HTTP del lado del servidor.
 - `withParameter(string $name, $value)`: Agrega a  `Request` un parámetro nombrado.
 - `withoutParameter(string $name)`: Elimina de `Request` un parámetro de ruta especifico.
 
-## <a name="responseclass">Response</a>
+## Response
 
 Representa una respuesta HTTP del servidor.
 
@@ -495,7 +540,7 @@ Métodos disponibles:
 - `getInfo()`: Devuelve un `array` asociativo con información sobre la petición enviada. Si se invoca antes de `ClientRequest::send()` devolverá `null`.
 - `send()`: Envía la petición.
 
-## <a name="emitterclass">Emitter</a>
+## Emitter
 
 Esta clase solo contiene el método estático `Emitter::emit`, y recibe como parámetro un objeto `Response`. Se encarga de "emitir" el response.
 
@@ -511,7 +556,7 @@ Emitter::emit($response);
 
 Ambas clases, `Bag` y `Arguments`,  sirven para manipular una colección de datos (array asociativo). Sin embargo tienen diferencias, la clase `Bag` solo contiene métodos de lectura, es decir, no permite modificar los datos, mientras que `Arguments` extiende a la clase `Bag` y es de lecto escritura, es decir, permite leer y modificar los datos.
 
-### <a name="thebagclass">The `Bag` Class</a>
+### The `Bag` Class
 
 Esta clase contiene métodos de solo lectura, es decir, solo puede evaluar y consultar los parámetros que almacena.
 
@@ -531,7 +576,7 @@ Esta clase *extiende* a la clase padre `Bag` heredando sus métodos y además co
 - `remove(string $key)`: Elimina un parámetro por su nombre.
 - `clear()`: Elimina todos los parámetros.
 
-### <a name="theglobalsclass">The `Global` Class</a>
+### The `Globals` Class
 
 Almacena y proporciona acceso a las variables de `$GLOBALS` mediante métodos estáticos. Tiene los mismos métodos de `Bag` y `Arguments`, excepto `Bag::keys` y `Bag::gettype`
 
@@ -539,7 +584,7 @@ Almacena y proporciona acceso a las variables de `$GLOBALS` mediante métodos es
 
 Las vistas son el medio por el cual el router devuelve y renderiza un objeto `Response` con contenido HTML en el navegador. La única configuración que se necesita es definir el directorio en donde estarán alojados los archivos *templates*. 
 
-**Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configurator](#configuratorclass)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
+**Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configurator](#configurator)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
 
 ```php
 use Forge\Route\View;
@@ -573,7 +618,7 @@ public function homeAction(Request $request, Response $response): Response {
 
 ### Arguments
 
-Una forma alternativa de enviar argumentos a una vista es a través de los métodos `View::addArgument` y `View::addArguments`. El primero recibe dos parámetros (nombre y valor) y el segundo un array asociativo. Estos parámetros serán automáticamente incluidos al invocar el método `View::render`, por lo cual deben ser declarados antes de renderizar (Ver [Render](#renderview)).
+Una forma alternativa de enviar argumentos a una vista es a través de los métodos `View::addArgument` y `View::addArguments`. El primero recibe dos parámetros (nombre y valor) y el segundo un array asociativo. Estos parámetros serán automáticamente incluidos al invocar el método `View::render`, por lo cual deben ser declarados antes de renderizar (Ver [Render](#render)).
 
 ```php
 $view->addArgument('message', 'Hello weeerld!');
@@ -631,11 +676,11 @@ $view->render();
 </html>
 ```
 
-### <a name="renderview">Render</a>
+### Render
 
 El método `View::render` se invoca siempre al final y devuelve lo contenido en el actual *buffer* para ser recuperado en una variable y enviado en un `Response`.
 
-## <a name="configuratorclass">Configurator</a>
+## Configurator
 
 Esta clase proporciona el acceso para modificar de manera segura algunas configuraciones del router que son default en principio. Al crear un objeto `Configurator` recibe como parámetros un array asociativo con las opciones disponibles para posteriormente ser inyectado al constructor del router. Las opciones disponibles son:
 
@@ -675,7 +720,7 @@ new Handler([
 ]);
 ```
 
-## <a name="function">Functions</a>
+## Functions
 
 El router dispone de ciertas funciones que se invocan bajo el namespace `Forge\functions`. Ejemplo:
 
