@@ -10,37 +10,32 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
   - [Wildcards](#wildcards)
 - [Routes Group](#routes-group)
 - [Controllers](#controllers)
+- <mark>[Mount controllers*](#mount-controllers)</mark>
 - [Add namespaces](#add-namespaces)
 - [Engine](#engine)
   - [Application Engine](#application-engine)
   - [Json Engine](#json-engine)
-
 - [Dependencies Container](#dependencies-container)
   - [The `Injector` class](#the-injector-class)
-
 - [Services Provider](#services-provider)
   - [The `Services` class](#the-services-class)
-
 - [Container vs Services](#container-vs-services)
 - [Uri Generator](#uri-generator)
 - [Request](#request)
 - [Response](#response)
   - [Json Response](#json-response)
   - [Redirect Response](#redirect-response)
-
 - [Client Request](#client-request)
 - [Emitter](#emitter)
 - [Data Collection](#data-collection)
   - [The `Bag` class](#the-bag-class)
   - [The `Arguments` class](#the-arguments-class)
   - [The `Globals` class](#the-global-class)
-
 - [Views](#views)
   - [Template](#template)
   - [Arguments](#arguments)
   - [Extending the template](#extending-the-template)
   - [Render](#render)
-
 - [Configurator](#configurator)
 - [Handler](#handler)
 - [Functions](#functions)
@@ -168,7 +163,7 @@ $router->addRouteGroup('/foo', function(RouteGroup $group) {
 });
 ```
 
-**Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configurator](#configurator)).
+**Nota:** Si previamente se ha definido el directorio de *templates* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configurator](#configurator)).
 
 ### Wildcards[^2]
 
@@ -265,6 +260,55 @@ Para recuperar los argumentos como un array asociativo usa el método `Bag::all`
 
 Si se hace una petición `GET` en la URI solicitada (ejem. `/path/?foo=bar&lorem=ipsum`), serán accesibles en `$_GET` con el método `Request::getQueryParams`. **Nota**: Se puede utilizar la función `build_query` (Ver [Functions](#functions)) para generar una URI como la anterior mostrada en el ejemplo.
 
+## <mark>Mount controllers</mark>
+
+Esta opción permite montar una clase controlador a través del método `Router::addWithAnnotations`. Dentro de la clase controlador cada método debe tener una anotación con un patrón expecífico en su bloque de documentación; en este se define el *string* de la ruta, el nombre de la ruta y el método http. No importa en que orden se definan siempre y cuando se especifiquen estos tres atributos, ya que con esta información se generan las rutas. Ejemplo:
+
+```php
+class FooController {
+    /**
+     * @Route(path='/', method='get', name='inicio')
+     */
+    public function indexAction(Request $request, Response $response) {
+        return $response->withContent('Hola Mundoooo!');
+    }
+
+    /**
+     * @Route(path='/foo/{name}', name='welcome', method='get')
+     */
+    public function welcomeAction(Request $request, Response $response) {
+        return $response->withContent(sprintf('Hola %s!', $request->getParameter('name')));
+    }
+}
+```
+
+Nota que cada atributo es definido usando comillas simples; esto es importante. De esta forma se monta todo el controlador:
+
+```php
+require __DIR__.'/vendor/autoload.php';
+
+use Forge\Route\{
+    Emitter,
+    Request,
+    Response,
+    Router
+};
+
+$app = new Router();
+
+$app->addWithAnnotations(FooController::class);
+
+$result = $app->handleRequest(Request::fromGlobals());
+
+Emitter::emit($result);
+```
+
+Para el caso que se quiera definir grupos de rutas, solo se envía un segundo parámetro con el prefijo de grupo:
+
+```php
+// Todas las rutas definidas en FooController::class tendran el prefijo admin
+$app->addWithAnnotations(FooController::class, '/admin');
+```
 
 ## Add namespaces
 

@@ -11,14 +11,18 @@ use Closure;
 use Composer\Autoload\ClassLoader;
 use Forge\Exceptions\BadNameException;
 use Forge\Exceptions\DuplicityException;
+use Forge\Exceptions\MissingArgumentException;
 use Forge\Exceptions\RouteNotFoundException;
 use Forge\Exceptions\UnsupportedRequestMethodException;
 use Forge\Interfaces\EngineInterface;
+use ReflectionClass;
+use stdClass;
 
 use function Forge\functions\generator;
 use function Forge\functions\namespace_format;
 use function Forge\functions\remove_trailing_slash;
 use function Forge\functions\str_ends_with;
+use function Forge\functions\str_path;
 
 /**
  * Router
@@ -105,6 +109,57 @@ class Router {
             $config($this);
         }
         $this->loader = new ClassLoader;
+    }
+
+    /**
+     * It allows to mount a controlling class with the definition of the routes 
+     * within the annotations of each method, following a specific pattern.
+     * 
+     * @param string $controller_classname Full controller class name
+     * @param ?string $prefix Optional param to group routes under a common prefix
+     * @return Router
+     */
+    public function addWithAnnotations(string $controller_classname, ?string $prefix = null): Router {
+        $reflector = new ReflectionClass($controller_classname);
+        $methods_class = $reflector->getMethods();
+
+        foreach($methods_class as $method) {
+            // Ignore the methods wich begins with double undescore (magic methods)
+            if(strcmp(substr($method->name, 0, 2), '__') === 0) {
+                continue;
+            }
+            
+            $closure = $reflector->getMethod($method->name);
+            $comment = $closure->getDocComment();
+            $result = $this->filterDocComment($comment);
+
+            // Check for errors in route definition annotation
+            if($result instanceof stdClass) {
+                if(1 === $result->errno) {
+                    throw new BadNameException(sprintf('Incorrect annotation route, don\'t match the pattern for method "%s" in class "%s".', $method->name, $controller_classname));
+                } else if(2 === $result->errno) {
+                    throw new MissingArgumentException(sprintf('Parameters missing (%s) in route definition for method "%s" in class "%s". Check for illegal whitespaces and correct params names.', implode(', ', $result->data),$method->name, $controller_classname));
+                }                
+            } 
+
+            $path = $result['path'];
+            $http_method = strtoupper($result['method']);
+            $name = strtolower($result['name']);
+
+            // Check for allowed http request method
+            if(!in_array($http_method, $this->supported_request_methods)) {
+                throw new UnsupportedRequestMethodException(sprintf('The request http method %s isn\'t allowed in route definition.', $http_method));
+            }
+
+            $new_route = new Route($name, $path, $closure->class, $closure->name, $http_method);
+            if(null !== $prefix) {
+                $new_route->prependStringPath($prefix);
+            }
+
+            $this->addRoute($new_route);
+        }
+
+        return $this;
     }
 
     /**
@@ -344,6 +399,36 @@ class Router {
     }
 
     /**
+     * Remove slashes and asterisks from comment lines and return the route parts definition
+     * 
+     * @param string $comment Comment lines to parse
+     * @return string[]|stdClass
+     */
+    private function filterDocComment(string $comment) {
+        $pattern = '#(@Route\s*[a-zA-Z0-9, ()_].*)#';
+
+        if(!preg_match($pattern, $comment, $parts)) {
+            $result = new stdClass;
+            $result->errno = 1;
+            return $result;
+        }
+
+        $definition = array_pop($parts);
+        preg_match_all('#(\w+)=\'(.*?)\'#', $definition, $pairs);
+        $data = array_combine( $pairs[1], $pairs[2]);
+
+        $diff = array_diff(['path','method', 'name'], array_keys($data));
+        if($diff) {
+            $result = new stdClass;
+            $result->errno = 2;
+            $result->data = $diff;
+            return $result;
+        }
+
+        return $data;
+    }
+
+    /**
      * A copyright message
      * 
      * @return string
@@ -353,5 +438,3 @@ class Router {
     }
 
 }
-
-?>

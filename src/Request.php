@@ -17,7 +17,7 @@ namespace Forge\Route;
  * @method Bag getCookieParams() Return the $_COOKIE params
  * @method Bag getUploadedFiles() Return the $_FILE params
  * @method Bag getParameters() Return the named parameters of route
- * @method mixed getparameter(string $parameter, $default = null) Return a parameter by name
+ * @method mixed getParameter(string $parameter, $default = null) Return a parameter by name
  * @method Request withQueryParams(array $query) Add parameters to Request object in the $_GET array
  * @method Request withBodyParams(array $body) Add parameters to Request object in the $_POST array
  * @method Request withServerParams(array $server) Add parameters to Request object in the $_SERVER array
