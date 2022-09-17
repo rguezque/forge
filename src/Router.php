@@ -405,7 +405,7 @@ class Router {
      * @return string[]|stdClass
      */
     private function filterDocComment(string $comment) {
-        $pattern = '#(@Route\s*[a-zA-Z0-9, ()_].*)#';
+        $pattern = '#(@Route\([a-zA-Z0-9,_].*\))#';
 
         if(!preg_match($pattern, $comment, $parts)) {
             $result = new stdClass;
