@@ -1,4 +1,4 @@
-# Forge\Route
+# rguezque\Route
 
 Un liviano y básico router php para proyectos rápidos y pequeños.
 
@@ -30,7 +30,7 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
 - [Data Collection](#data-collection)
   - [The `Bag` class](#the-bag-class)
   - [The `Arguments` class](#the-arguments-class)
-  - [The `Globals` class](#the-global-class)
+  - [The `Globals` class](#the-globals-class)
 - [Views](#views)
   - [Template](#template)
   - [Arguments](#arguments)
@@ -45,7 +45,7 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
 
 En **Apache** edita el archivo `.htaccess`  en la raíz del proyecto:
 
-```
+```htaccess
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -83,7 +83,7 @@ server {
 
 Por último genera el **autoload [^1]**
 
-```
+```shell
 composer dump-autoload
 ```
 
@@ -256,9 +256,26 @@ class FooController {
 }
 ```
 
-Para recuperar los argumentos como un array asociativo usa el método `Bag::all`, donde cada clave de dicho array corresponde al nombre de cada *wildcard* de la ruta.
+Para recuperar los argumentos como un array asociativo usa el método `Bag::all`, donde cada clave de dicho array corresponde al nombre de cada *wildcard* de la ruta:
 
-Si se hace una petición `GET` en la URI solicitada (ejem. `/path/?foo=bar&lorem=ipsum`), serán accesibles en `$_GET` con el método `Request::getQueryParams`. **Nota**: Se puede utilizar la función `build_query` (Ver [Functions](#functions)) para generar una URI como la anterior mostrada en el ejemplo.
+```php
+//...
+$args = $request->getParameters();
+$params = $args->all() // Devuelve los parámetros en un array asociativo nombre-valor
+```
+
+Si se hace una petición `GET` en la URI solicitada (ejem. `/path/?foo=bar&lorem=ipsum`), serán accesibles en `$_GET` con el método `Request::getQueryParams`. **Nota**: Se puede utilizar la función `build_query` (Ver [Functions](#functions)) para generar una URI como la del ejemplo.
+
+```php
+// Lo siguiente genera: "/path/?foo=bar&lorem=ipsum"
+build_query('/path', [
+    'foo' => 'bar',
+    'lorem' => 'ipsum'
+]);
+
+// Los valores anteriores se recuperan en un objeto Bag con:
+$params = $request->getQueryParams()
+```
 
 ## <mark>Mount controllers</mark>
 
@@ -471,7 +488,7 @@ public function indexAction(Request $request, Response $response, Services $serv
 
 ## Container vs Services
 
-El uso de cada uno dependerá de la preferencia del programador y según convenga. La única regla es que solo se puede implementar uno a la vez, o se elige usar un Contenedor (`EngineInterface::setContainer`) o bien el Proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobre escribirá al primero.
+El uso de cada uno dependerá de la preferencia del programador y según convenga. La única regla es que solo se puede implementar uno a la vez, o se elige usar un Contenedor (`EngineInterface::setContainer`) o bien el Proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobrescribirá al primero.
 
 ## Uri Generator
 
@@ -501,11 +518,13 @@ $this->uri_generator->generate('hola_page', ['nombre' = 'John']);
 // Generará la URI "/hola/John"
 ```
 
-## Request
+## HTTP
 
-Representa una petición HTTP del lado del servidor.
+### Request
 
-- `fromGlobals()`: Método estático que crea un `Request` a partir de los globales `$_GET`, `$_POST`, `$_SERVER`, `$_COOKIE`, `$_FILES`, y un *array* vacío para los parámetros nombrados de las rutas. Los *getters* devuelven un objeto `Bag` (Ver [The Bag Class](#thebagclass)).
+La clase `Request` representa una petición HTTP del lado del servidor. Los métodos disponibles son los siguientes:
+
+- `fromGlobals()`: Método estático que crea un `Request` a partir de los globales `$_GET`, `$_POST`, `$_SERVER`, `$_COOKIE`, `$_FILES`, y un *array* vacío para los parámetros nombrados de las rutas. Los *getters* devuelven un objeto `Bag` (Ver [The Bag Class](#the-bag-class)).
 - `getQueryParams()`: Devuelve los parámetros de `$_GET`.
 - `getBodyParams()`: Devuelve los parámetros de `$_POST`.
 - `getServerParams()`: Devuelve los parámetros de `$_SERVER`.
@@ -522,47 +541,9 @@ Representa una petición HTTP del lado del servidor.
 - `withParameter(string $name, $value)`: Agrega a  `Request` un parámetro nombrado.
 - `withoutParameter(string $name)`: Elimina de `Request` un parámetro de ruta especifico.
 
-## Response
+### Client Request
 
-Representa una respuesta HTTP del servidor.
-
-- `create(int $code = 200, string $phrase = '')`: Método estático que crea un simple response con un código y texto de estatus (opcional).
-- `getStatus()`: Devuelve el código de estatus HTTP actual.
-- `getContent()`: Devuelve el cuerpo del response.
-- `getstatusText()`: Devuelve el texto de estatus HTTP actual.
-- `getProtocolVersion()`: Devuelve la versión de protocolo HTTP actual del servidor.
-- `withContent(string $content)`: Especifica el contenido a mostrar.
-- `withHeader(string $key, string $value)`: Especifica un encabezado HTTP y su valor.
-- `withHeaders(array $headers)`: Especifica varios encabezado HTTP a la vez y sus valores.
-- `withStatus(int $code)`: Especifica un código numérico de estatus HTTP. Ver [HTTP Status Codes](http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml).
-- `withStatusPhrase(string $phrase)`: Especifica un texto a asignar al actual código de estatus HTTP.
-- `withProtocolVersion(string $version)`: Especifica que versión de protocolo HTTP usar. Por lo regular es '1.1'.
-- `clear()`: Limpia el response actual, reiniciando a los valores default.
-
-### Json Response
-
-Extiende a la clase `Response`, por default recibe un array asociativo y devuelve una respuesta en formato de datos JSON. Si los datos que recibe `JsonResponse` ya están en formato JSON previamente, se debe especificar un segundo parámetro `false`, para evitar volver a convertir.
-
-```php
-$data = [
-    'id' => $id,
-    'name' => 'John Doe',
-    'age' => 30
-];
-return new JsonResponse($data);
-```
-
-### Redirect Response
-
-Extiende a la clase `Response` y devuelve una respuesta de redirección a la URI especificada. Si se usa `UriGenerator` se puede crear la URI de las rutas incluyendo las que tienen *wildcards* y enviarla como argumento (Ver [Uri Generator](#urigenerator)).
-
-```php
-return new RedirectResponse('/hola/John/Doe');
-```
-
-## Client Request
-
-Esta clase representa peticiones HTTP desde el lado del cliente.
+La clase `ClientRequest` representa peticiones HTTP desde el lado del cliente.
 
 ```php
 use Forge\Route\ClientRequest;
@@ -584,7 +565,45 @@ Métodos disponibles:
 - `getInfo()`: Devuelve un `array` asociativo con información sobre la petición enviada. Si se invoca antes de `ClientRequest::send()` devolverá `null`.
 - `send()`: Envía la petición.
 
-## Emitter
+### Response
+
+Representa una respuesta HTTP del servidor.
+
+- `create(int $code = 200, string $phrase = '')`: Método estático que crea un simple response con un código y texto de estatus (opcional).
+- `getStatus()`: Devuelve el código de estatus HTTP actual.
+- `getContent()`: Devuelve el cuerpo del response.
+- `getstatusText()`: Devuelve el texto de estatus HTTP actual.
+- `getProtocolVersion()`: Devuelve la versión de protocolo HTTP actual del servidor.
+- `withContent(string $content)`: Especifica el contenido a mostrar.
+- `withHeader(string $key, string $value)`: Especifica un encabezado HTTP y su valor.
+- `withHeaders(array $headers)`: Especifica varios encabezado HTTP a la vez y sus valores.
+- `withStatus(int $code)`: Especifica un código numérico de estatus HTTP. Ver [HTTP Status Codes](http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml).
+- `withStatusPhrase(string $phrase)`: Especifica un texto a asignar al actual código de estatus HTTP.
+- `withProtocolVersion(string $version)`: Especifica que versión de protocolo HTTP usar. Por lo regular es '1.1'.
+- `clear()`: Limpia el response actual, reiniciando a los valores default.
+
+#### Json Response
+
+Extiende a la clase `Response`, por default recibe un array asociativo y devuelve una respuesta en formato de datos JSON. Si los datos que recibe `JsonResponse` ya están en formato JSON previamente, se debe especificar un segundo parámetro `false`, para evitar el intento de convertir los datos.
+
+```php
+$data = [
+    'id' => $id,
+    'name' => 'John Doe',
+    'age' => 30
+];
+return new JsonResponse($data);
+```
+
+#### Redirect Response
+
+Extiende a la clase `Response` y devuelve una respuesta de redirección a la URI especificada. Si se usa `UriGenerator` se puede crear la URI de las rutas incluyendo las que tienen *wildcards* y enviarla como argumento (Ver [Uri Generator](#urigenerator)).
+
+```php
+return new RedirectResponse('/hola/John/Doe');
+```
+
+### Emitter
 
 Esta clase solo contiene el método estático `Emitter::emit`, y recibe como parámetro un objeto `Response`. Se encarga de "emitir" el response.
 

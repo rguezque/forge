@@ -49,13 +49,13 @@ class View {
     /**
      * Views constructor
      * 
-     * @param string $templates_dir Templates files directory
+     * @param ?string $templates_dir Templates files directory
      * @throws MissingArgumentException
      */
-    public function __construct(string $templates_dir = '') {
+    public function __construct(?string $templates_dir = null) {
         $this->arguments = new Arguments();
 
-        if('' !== $templates_dir) {
+        if(null !== $templates_dir) {
             $this->path = add_trailing_slash($templates_dir);
         } else if(Globals::has('router.views.path')) {
             $this->path = Globals::get('router.views.path');

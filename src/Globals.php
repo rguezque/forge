@@ -9,7 +9,7 @@
 namespace Forge\Route;
 
 /**
- * Represent $GLOBALS parameters
+ * Represent $GLOBALS router parameters
  * 
  * @static void set(string $key, $value) Set or overwrite a global parameter
  * @static void remove(string $key) Remove a global parameter by name
@@ -23,6 +23,13 @@ namespace Forge\Route;
 class Globals {
 
     /**
+     * Key for globals router parameters into $GLOBALS array
+     * 
+     * @var string
+     */
+    private const NAMESPACE = 'ROUTER_GLOBALS';
+
+    /**
      * Set or overwrite a global parameter
      * 
      * @param string $key Parameter name
@@ -30,7 +37,7 @@ class Globals {
      * @return void
      */
     public static function set(string $key, $value): void {
-        $GLOBALS[$key] = $value;
+        $GLOBALS[Globals::NAMESPACE][$key] = $value;
     }
 
     /**
@@ -40,7 +47,7 @@ class Globals {
      * @return void
      */
     public static function remove(string $key): void {
-        unset($GLOBALS[$key]);
+        unset($GLOBALS[Globals::NAMESPACE][$key]);
     }
 
     /**
@@ -49,7 +56,7 @@ class Globals {
      * @return void
      */
     public static function clear(): void {
-        $GLOBALS = array();
+        $GLOBALS[Globals::NAMESPACE] = [];
     }
 
     /**
@@ -63,7 +70,7 @@ class Globals {
      */
     public static function get(string $key, $default = null) {
         return self::has($key) 
-        ? (is_array($GLOBALS[$key]) ? new Bag($GLOBALS[$key]) : $GLOBALS[$key]) 
+        ? (is_array($GLOBALS[Globals::NAMESPACE][$key]) ? new Bag($GLOBALS[Globals::NAMESPACE][$key]) : $GLOBALS[Globals::NAMESPACE][$key]) 
         : $default;
     }
 
@@ -73,7 +80,7 @@ class Globals {
      * @return array
      */
     public static function all(): array {
-        return $GLOBALS;
+        return $GLOBALS[Globals::NAMESPACE];
     }
 
     /**
@@ -83,7 +90,7 @@ class Globals {
      * @return bool
      */
     public static function has(string $key): bool {
-        return array_key_exists($key, $GLOBALS);
+        return array_key_exists($key, $GLOBALS[Globals::NAMESPACE]);
     }
 
     /**
@@ -93,7 +100,7 @@ class Globals {
      * @return bool
      */
     public static function valid(string $key): bool {
-        return self::has($key) && !empty($GLOBALS[$key]) && !is_null($GLOBALS[$key]);
+        return self::has($key) && !empty($GLOBALS[Globals::NAMESPACE][$key]) && !is_null($GLOBALS[Globals::NAMESPACE][$key]);
     }
 
     /**
@@ -102,16 +109,16 @@ class Globals {
 	 * @return int
 	 */
     public static function count(): int {
-    	return sizeof($GLOBALS);
+    	return sizeof($GLOBALS[Globals::NAMESPACE]);
     }
 
     /**
-     * Return all globals vars as json data
+     * Return all globals router parameters as json data
      * 
      * @return string
      */
-    public function toJson(): string {
-        return json_encode($GLOBALS, JSON_PRETTY_PRINT);
+    public static function jsonSerialize() {
+        return json_encode($GLOBALS[Globals::NAMESPACE], JSON_PRETTY_PRINT);
     }
     
 }
