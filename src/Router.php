@@ -16,6 +16,7 @@ use Forge\Exceptions\MissingArgumentException;
 use Forge\Exceptions\RouteNotFoundException;
 use Forge\Exceptions\UnsupportedRequestMethodException;
 use Forge\Interfaces\EngineInterface;
+use InvalidArgumentException;
 use ReflectionClass;
 use stdClass;
 
@@ -32,6 +33,7 @@ use function Forge\functions\str_path;
  * @method Router setEngine(EngineInterface $engine) Set a router engine, tells how to process request and response
  * @method Router addRoute(Route $route) Add a route to the route collection
  * @method Router addRouteGroup(string $namespace, Route ...$routes) Add routes group with a common namespace
+ * @method Router security(array $options) Define security parameters for router using login
  * @method Response handleRequest(Request $request) Handle the request URI and routing
  */
 class Router {
@@ -113,52 +115,63 @@ class Router {
     }
 
     /**
-     * It allows to mount a controlling class with the definition of the routes 
-     * within the annotations of each method, following a specific pattern.
+     * Define security parameters for router using login
      * 
-     * @param string $controller_classname Full controller class name
-     * @param ?string $prefix Optional param to group routes under a common prefix
+     * @param array $options Security parameters
+     * @throws MissingArgumentException
+     * @throws InvalidArgumentException
+     * @throws BadNameException
      * @return Router
      */
-    public function addWithAnnotations(string $controller_classname, ?string $prefix = null): Router {
-        $reflector = new ReflectionClass($controller_classname);
-        $methods_class = $reflector->getMethods();
-
-        foreach($methods_class as $method) {
-            // Ignore the methods wich begins with double undescore (magic methods)
-            if(strcmp(substr($method->name, 0, 2), '__') === 0) {
-                continue;
+    public function security(array $options): Router {
+        // Check for all keys options array
+        foreach($options as $option_group) {
+            $missed = array_diff(['protect', 'form', 'roles'], array_keys($option_group));
+            if(0 < sizeof($missed)) {
+                throw new MissingArgumentException(sprintf('Missing security options %s', implode(', ', $missed)));
             }
-            
-            $closure = $reflector->getMethod($method->name);
-            $comment = $closure->getDocComment();
-            $result = $this->filterDocComment($comment);
-
-            // Check for errors in route definition annotation
-            if($result instanceof stdClass) {
-                if(1 === $result->errno) {
-                    throw new BadNameException(sprintf('Incorrect annotation route, don\'t match the pattern for method "%s" in class "%s".', $method->name, $controller_classname));
-                } else if(2 === $result->errno) {
-                    throw new MissingArgumentException(sprintf('Parameters missing (%s) in route definition for method "%s" in class "%s". Check for illegal whitespaces and correct params names.', implode(', ', $result->data),$method->name, $controller_classname));
-                }                
-            } 
-
-            $path = $result['path'];
-            $http_method = strtoupper($result['method']);
-            $name = strtolower($result['name']);
-
-            // Check for allowed http request method
-            if(!in_array($http_method, $this->supported_request_methods)) {
-                throw new UnsupportedRequestMethodException(sprintf('The request http method %s isn\'t allowed in route definition.', $http_method));
-            }
-
-            $new_route = new Route($name, $path, $closure->class, $closure->name, $http_method);
-            if(null !== $prefix) {
-                $new_route->prependStringPath($prefix);
-            }
-
-            $this->addRoute($new_route);
         }
+
+        // Check for nomenclature of roles
+        foreach($options as $option_group) {
+            $roles = $option_group['roles'];
+            if(!is_array($roles)) {
+                throw new InvalidArgumentException(sprintf('The key "roles" must be declared as array, catched %s', gettype($roles)));
+            }
+            foreach($roles as $role) {
+                if(!str_starts_with($role, 'ROLE_')) {
+                    throw new BadNameException('The role names must start with prefix "ROLE_".');
+                }
+            }
+        }
+
+        // Add the login and logout routes
+        array_walk($options, function(&$item) {
+            $basepath = '' == $this->basepath ?: str_path($this->basepath);
+            $form = str_path($item['form']);
+            $item['form'] = $basepath.$form; // Add basepath to   
+            $item['login'] = $form.'/login';
+            $item['logout'] = $form.'/logout';
+
+            // Create route names
+            $name = str_replace('/', '_', trim($item['form'], '/\\'));
+            $name_login = $name.'_login';
+            $name_logout = $name.'_logout';
+            // Create the routes
+            $route_login = new Route($name_login, $item['login'], Authentication::class, 'login', Router::POST);
+            $route_logout = new Route($name_logout, $item['logout'], Authentication::class, 'logout', Router::GET);
+            // Add the basepath
+            $route_login->prependStringPath($this->basepath);
+            $route_logout->prependStringPath($this->basepath);
+            // Save the route names
+            $this->route_names[$name_login] = $route_login->getPath();
+            $this->route_names[$name_logout] = $route_logout->getPath();
+            // Add the routes
+            $this->routes[$route_login->getRequestMethod()][] = $route_login;
+            $this->routes[$route_logout->getRequestMethod()][] = $route_logout;
+        });
+
+        $this->options_security = $options;
 
         return $this;
     }
@@ -304,6 +317,12 @@ class Router {
         // Catch the request uri
         $request_uri = $this->filterRequestUri($server['REQUEST_URI']);
 
+        // Check for security parameters
+        if($this->options_security) {
+            $firewall = Authentication::firewall($this->options_security, $request_uri);
+            if(null != $firewall) return $firewall;
+        }
+
         /**
          * Select the route collection according the request method and implement a generator. 
          * Send an empty array in case of inexistents routes with the request method.
@@ -397,36 +416,6 @@ class Router {
         if([] !== $matches) {
             $params['@matches'] = $matches;
         }
-    }
-
-    /**
-     * Remove slashes and asterisks from comment lines and return the route parts definition
-     * 
-     * @param string $comment Comment lines to parse
-     * @return string[]|stdClass
-     */
-    private function filterDocComment(string $comment) {
-        $pattern = '#(@Route\([a-zA-Z0-9,_].*\))#';
-
-        if(!preg_match($pattern, $comment, $parts)) {
-            $result = new stdClass;
-            $result->errno = 1;
-            return $result;
-        }
-
-        $definition = array_pop($parts);
-        preg_match_all('#(\w+)=\'(.*?)\'#', $definition, $pairs);
-        $data = array_combine( $pairs[1], $pairs[2]);
-
-        $diff = array_diff(['path','method', 'name'], array_keys($data));
-        if($diff) {
-            $result = new stdClass;
-            $result->errno = 2;
-            $result->data = $diff;
-            return $result;
-        }
-
-        return $data;
     }
 
     /**

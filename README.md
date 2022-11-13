@@ -10,7 +10,6 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
   - [Wildcards](#wildcards)
 - [Routes Group](#routes-group)
 - [Controllers](#controllers)
-- <mark>[Mount controllers*](#mount-controllers)</mark>
 - [Add namespaces](#add-namespaces)
 - [Engine](#engine)
   - [Application Engine](#application-engine)
@@ -38,6 +37,7 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
   - [Render](#render)
 - [Configurator](#configurator)
 - [Handler](#handler)
+- [Authentication](#authentication)
 - [Functions](#functions)
 
 
@@ -275,56 +275,6 @@ build_query('/path', [
 
 // Los valores anteriores se recuperan en un objeto Bag con:
 $params = $request->getQueryParams()
-```
-
-## <mark>Mount controllers</mark>
-
-Esta opción permite montar una clase controlador a través del método `Router::addWithAnnotations`. Dentro de la clase controlador cada método debe tener una anotación con un patrón expecífico en su bloque de documentación; en este se define el *string* de la ruta, el nombre de la ruta y el método http. No importa en que orden se definan siempre y cuando se especifiquen estos tres atributos, ya que con esta información se generan las rutas. Ejemplo:
-
-```php
-class FooController {
-    /**
-     * @Route(path='/', method='get', name='inicio')
-     */
-    public function indexAction(Request $request, Response $response) {
-        return $response->withContent('Hola Mundoooo!');
-    }
-
-    /**
-     * @Route(path='/foo/{name}', name='welcome', method='get')
-     */
-    public function welcomeAction(Request $request, Response $response) {
-        return $response->withContent(sprintf('Hola %s!', $request->getParameter('name')));
-    }
-}
-```
-
-Nota que cada atributo es definido usando comillas simples; esto es importante. De esta forma se monta todo el controlador:
-
-```php
-require __DIR__.'/vendor/autoload.php';
-
-use Forge\Route\{
-    Emitter,
-    Request,
-    Response,
-    Router
-};
-
-$app = new Router();
-
-$app->addWithAnnotations(FooController::class);
-
-$result = $app->handleRequest(Request::fromGlobals());
-
-Emitter::emit($result);
-```
-
-Para el caso que se quiera definir grupos de rutas, solo se envía un segundo parámetro con el prefijo de grupo:
-
-```php
-// Todas las rutas definidas en FooController::class tendran el prefijo admin
-$app->addWithAnnotations(FooController::class, '/admin');
 ```
 
 ## Add namespaces
@@ -782,6 +732,88 @@ new Handler([
     'environment' => 'development' // Cambiar a 'production' para puesta en marcha (deploy)
 ]);
 ```
+
+## Authentication
+
+El router cuenta con un sencillo sistema de autenticación de usuarios, el cual se compone de tres elementos: la clase `Authentication`, la clase `Users` y una conexión a **MySQL** mediante `PDO`; además de los parámetros de seguridad que se definen con `Router::security`.
+
+El primer paso es definir los parámetros de seguridad:
+
+```php
+use App\TestController;
+use Forge\Route\ApplicationEngine;
+use Forge\Route\Authentication;
+use Forge\Route\Emitter;
+use Forge\Route\Injector;
+use Forge\Route\Request;
+use Forge\Route\Route;
+use Forge\Route\Router;
+use Forge\Route\Users;
+use PDO;
+
+require __DIR__.'/vendor/autoload.php';
+
+$app = new Router();
+
+$app->addNamespaces([
+    'App\\' => __DIR__.'/app'
+]);
+
+$app->addRoute(new Route('index', '/', TestController::class, 'indexAction'));
+$app->addRoute(new Route('form', '/form_admin', TestController::class, 'formAction'));
+$app->addRoute(new Route('admin', '/admin', TestController::class, 'adminAction'));
+
+$app->security([
+    [
+        'protect' => '/admin',
+        'form' => '/form_admin',
+        'roles' => ['ROLE_ADMIN', 'ROLE_SUPER']
+    ],
+    [
+        'protect' => '/super',
+        'form' => '/form_super',
+        'roles' => ['ROLE_SUPER']
+    ]
+]);
+
+$cont = new Injector;
+$cont->add(TestController::class);
+$cont->add(PDO::class)->addParameters([
+    'mysql:dbname=ejemplo;host=localhost;port=3306;charset=utf8',
+    'usuario',
+    'contrasena'
+]);
+$cont->add(Users::class)->addParameter(PDO::class);
+$cont->add(Authentication::class)->addParameter(Users::class);
+
+$engine = new ApplicationEngine;
+$engine->setContainer($cont);
+
+$app->setEngine($engine);
+
+$response = $app->handleRequest(Request::fromGlobals());
+Emitter::emit($response);
+```
+
+En este ejemplo, ``Router::security` define los parámetros de seguridad. En este caso se han definido dos rutas protegidas `/admin` y `/super` donde por cada ruta a proteger se define un array con claves. Tomando como ejemplo la ruta `/admin`:
+
+- `protect`: Define la ruta a proteger y sus sub rutas.
+- `form`: La ruta donde se encuentra el formulario de inicio de sesión para la ruta protegida. Deberá crear el controlador para el formulario y agregarlo al router de la forma habitual. Las rutas donde se envían el nombre de usuario y contraseña para hacer el *login* siempre será la sub ruta `/login` . Ejem. `/form_admin/login`. A su vez la ruta para el *logout* sería `/form_admin/logout` el cual al cerrar sesión redirecciona al formulario. Si desea redireccionar a otra ruta al cerrar sesión se debe definir como petición GET: `/form_admin/logout/?redirect=otra_ruta`
+
+	En el formulario HTML se deben definir los input con nombres `_username` y `_password` respectivamente y un input oculto `_redirect_success` que indica la ruta donde se redirigirá en caso de iniciar sesión con éxito. 
+- `roles`: Los roles de usuario permitidos para la ruta protegida. Siempre deben iniciar con el prefijo `ROLE_`. Cada vez que se quiera acceder a una ruta protegida se verificará que se haya iniciado sesión y que el rol de usuario sea alguno de los aceptados.
+
+Luego de debe agregar la clase `Authentication` al contenedor, o bien registrarla como un servicio, según sea el caso, esta clase contiene los métodos para *login*, *logout* y verificar los permisos de acceso. 
+
+De igual manera se debe agregar o registrar la clase `Users` que debe ser inyectada a la clase `Authentication`; esta clase contiene los métodos para buscar usuario y contraseña en la BD y recuperar los datos de usuario autenticado. Por lo cual debe agregarse una conexión `PDO` la cual será inyectada a la clase `Users` . A continuación los métodos y opciones de la clase `users`.
+
+### Users
+
+Por default se buscara por usuarios en la tabla `users` donde el nombre de usuario deberá estar en el campo `username` y la contraseña en el campo `password`. Sin embargo puede definir su propio nombre de la tabla de usuarios así como los campos de usuario y contraseña; ya sea al momento de crear la instancia de `Users` o con los métodos:
+
+- `setTablename`:
+- `setUsernameField`:
+- `setPasswordField`:
 
 ## Functions
 

@@ -43,8 +43,10 @@ class ApplicationEngine implements EngineInterface {
      * {@inheritdoc}
      */
     public function resolve(Route $route, Request $request): Response {
+        // Controller full classname
         $controller = $route->getController();
 
+        // Check for dependencies container
         if(isset($this->container) && $this->container instanceof Injector) {
             if(!$this->container->has($controller)) {
                 throw new NotFoundException(sprintf('Don\'t exists the dependency "%s" in the container.', $controller));
@@ -62,7 +64,7 @@ class ApplicationEngine implements EngineInterface {
         // Method of the controller
         $action = $route->getAction();
 
-        // Exec the callback for the route
+        // Check for services and exec the callback for the route
         if(isset($this->container) && $this->container instanceof Services) {
             $result = call_user_func([$class, $action], $request, new Response(), $this->container);
         } else {
