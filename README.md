@@ -766,28 +766,28 @@ $app->addRoute(new Route('admin', '/admin', TestController::class, 'adminAction'
 $app->security([
     [
         'protect' => '/admin',
-        'form' => '/form_admin',
+        'form' => '/form_admin', // Esta ruta debe registrarse
         'roles' => ['ROLE_ADMIN', 'ROLE_SUPER']
     ],
     [
         'protect' => '/super',
-        'form' => '/form_super',
+        'form' => '/form_super', // Esta ruta también debe registrarse
         'roles' => ['ROLE_SUPER']
     ]
 ]);
 
-$cont = new Injector;
-$cont->add(TestController::class);
-$cont->add(PDO::class)->addParameters([
+$container = new Injector;
+$container->add(TestController::class);
+$container->add(PDO::class)->addParameters([
     'mysql:dbname=ejemplo;host=localhost;port=3306;charset=utf8',
     'usuario',
     'contrasena'
 ]);
-$cont->add(Users::class)->addParameter(PDO::class);
-$cont->add(Authentication::class)->addParameter(Users::class);
+$container->add(Users::class)->addParameter(PDO::class);
+$container->add(Authentication::class)->addParameter(Users::class);
 
 $engine = new ApplicationEngine;
-$engine->setContainer($cont);
+$engine->setContainer($container);
 
 $app->setEngine($engine);
 
@@ -809,11 +809,46 @@ De igual manera se debe agregar o registrar la clase `Users` que debe ser inyect
 
 ### Users
 
-Por default se buscara por usuarios en la tabla `users` donde el nombre de usuario deberá estar en el campo `username` y la contraseña en el campo `password`. Sin embargo puede definir su propio nombre de la tabla de usuarios así como los campos de usuario y contraseña; ya sea al momento de crear la instancia de `Users` o con los métodos:
+La clase `Users` recibe 2 parámetros, una conexión PDO y un array opcional que define los nombres de la tabla y campos donde se buscara a los usuarios. Por default se buscara por usuarios en la tabla `users` donde el campo de usuario deberá llamarse `username` y el campo de la contraseña deberá llamarse `password`. Sin embargo puede definir su propio nombre de la tabla de usuarios así como los campos de usuario y contraseña, ya sea al momento de crear la instancia de `Users` o con los métodos: `setUsersTable`, `setIdentityField`, `setCredentialField` después de creada la instancia.
 
-- `setTablename`:
-- `setUsernameField`:
-- `setPasswordField`:
+Usando el contenedor:
+
+```php
+$container = new Injector;
+$container->add(PDO::class)->addParameters([
+    'mysql:dbname=ejemplo;host=localhost;port=3306;charset=utf8',
+    'usuario',
+    'contrasena'
+]);
+// Los parámetros se inyectan en el orden en que son declarados
+$container->add(Users::class)->addParameter(PDO::class)->addParameter([
+    'tablename' => 'usuarios',
+    'identity_field' => 'nombre_usuario',
+    'credential_field' => 'contrasena'
+]);
+```
+
+Usando servicios también se puede definir desde el constructor pero se muestra de esta forma a modo de ejemplo de como llamar a los métodos  `setUsersTable`, `setIdentityField` y `setCredentialField`:
+
+```php
+$services = new Services();
+
+$services->register('pdo', function() {
+	return new PDO('mysql:host=localhost;port=3306;dbname=test;charset=utf8', 'usuario', 'contrasena');
+});
+$services->register('users', function() use($services) {
+    $pdo = $services->pdo();
+    $users = new Users($pdo);
+	$users->setUsersTable('mis_usuarios');
+	$users->setIdentityField('email');
+	$users->setCredentialField('contrasena');
+    
+    return $users;
+});
+
+```
+
+**Nota:** La clase `Users` también dispone del método público `Users::findUser` el cual es utilizado internamente por el controlador encargado de hacer el *login*. Este método ejecuta la consulta en la base de datos; si encuentra el usuario y coincide la contraseña, devuelve un array asociativo con los datos encontrados relacionados al usuario, de lo contrario devolverá un array vacío. De esta forma la clase `Users` puede ser reutilizada para ortos proyectos.
 
 ## Functions
 
