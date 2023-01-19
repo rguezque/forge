@@ -800,7 +800,7 @@ En este ejemplo, ``Router::security` define los parámetros de seguridad. En est
 - `protect`: Define la ruta a proteger y sus sub rutas.
 - `form`: La ruta donde se encuentra el formulario de inicio de sesión para la ruta protegida. Deberá crear el controlador para el formulario y agregarlo al router de la forma habitual. Las rutas donde se envían el nombre de usuario y contraseña para hacer el *login* siempre será la sub ruta `/login` . Ejem. `/form_admin/login`. A su vez la ruta para el *logout* sería `/form_admin/logout` el cual al cerrar sesión redirecciona al formulario. Si desea redireccionar a otra ruta al cerrar sesión se debe definir como petición GET: `/form_admin/logout/?redirect=otra_ruta`
 
-	En el formulario HTML se deben definir los input con nombres `_username` y `_password` respectivamente y un input oculto `_redirect_success` que indica la ruta donde se redirigirá en caso de iniciar sesión con éxito. 
+	En el formulario HTML se deben definir los input con nombres `_username` y `_password` respectivamente y un input oculto `_redirect_success` que indica la ruta donde se redirigirá (dentro de su respectiva área) en caso de iniciar sesión con éxito. 
 - `roles`: Los roles de usuario permitidos para la ruta protegida. Siempre deben iniciar con el prefijo `ROLE_`. Cada vez que se quiera acceder a una ruta protegida se verificará que se haya iniciado sesión y que el rol de usuario sea alguno de los aceptados.
 
 Luego de debe agregar la clase `Authentication` al contenedor, o bien registrarla como un servicio, según sea el caso, esta clase contiene los métodos para *login*, *logout* y verificar los permisos de acceso. 
@@ -848,7 +848,7 @@ $services->register('users', function() use($services) {
 
 ```
 
-**Nota:** La clase `Users` también dispone del método público `Users::findUser` el cual es utilizado internamente por el controlador encargado de hacer el *login*. Este método ejecuta la consulta en la base de datos; si encuentra el usuario y coincide la contraseña, devuelve un array asociativo con los datos encontrados relacionados al usuario, de lo contrario devolverá un array vacío. De esta forma la clase `Users` puede ser reutilizada para ortos proyectos.
+**Nota:** La clase `Users` también dispone del método público `Users::findUser` el cual es utilizado internamente por el controlador encargado de hacer el *login*. Este método ejecuta la consulta en la base de datos; si encuentra el usuario y coincide la contraseña, devuelve un array asociativo con los datos encontrados relacionados al usuario, de lo contrario devolverá un array vacío. De esta forma la clase `Users` puede ser reutilizada para otros proyectos.
 
 ## Functions
 
