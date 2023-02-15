@@ -43,13 +43,32 @@ class MySQL {
      * 
      * @param string $name Connection name
      * @return PDO
+     * @throws NotFoundException
      */
     public function get(string $name = 'default'): PDO {
-        return $this->dbs[$name];
+        $name = trim(strtolower($name));
+
+        if(!array_key_exists($name, $this->dbs)) {
+            throw new NotFoundException(sprintf('Do not exists a MySQL PDO connection with name "%s"', $name));
+        }
+
+        $db = $this->dbs[$name];
+
+        if(!isset($db['connection'])) {
+            $params = $db['params'];
+            $pdo = new PDO($params['dsn'], $params['username'], $params['password'], [
+                PDO::ATTR_PERSISTENT => $params['persistent'],
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
+
+            $db['connection'] = $pdo;
+        }
+
+        return $db['connection'];
     }
 
     /**
-     * Add a PDO MySQL connection to the collection
+     * Add a PDO MySQL connection params to the collection
      * 
      * @param string $name Connection name
      * @param array $params Connection params
@@ -62,15 +81,16 @@ class MySQL {
             throw new DuplicityException(sprintf('Already exists a MySQL PDO connection with name "%s"', $name));
         }
 
-        $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s;', $params['host'], $params['port'], $params['dbname'], $params['charset'] ?? 'utf8');
+        $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s;', $params['host'], $params['port'] ?? 3306, $params['dbname'], $params['charset'] ?? 'utf8');
         $username = $params['username'];
         $password = $params['password'];
-        $pdo = new PDO($dsn, $username, $password, [
-            PDO::ATTR_PERSISTENT => $params['persistent'] ?? true,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        ]);
-
-        $this->dbs[$name] = $pdo;
+        $persistent = $params['persistent'] ?? true;
+        $this->dbs[$name]['params'] = [
+            'dsn' => $dsn,
+            'úsername' => $username,
+            'password' => $password,
+            'persistent' => $persistent
+        ];
     }
 
     /**
@@ -91,13 +111,7 @@ class MySQL {
      * @throws NotFoundException
      */
     public function __get(string $name): PDO {
-        $name = strtolower($name);
-
-        if(!$this->has($name)) {
-            throw new NotFoundException(sprintf('The request connection "%s" wasn\'t found.', $name));
-        }
-
-        return $this->dbs[$name];
+        return $this->get($name);
     }
 }
 
