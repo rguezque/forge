@@ -104,7 +104,12 @@ class Router {
      */
     private $loader;
 
-    private $options_security;
+    /**
+     * Contain security options
+     * 
+     * @var array
+     */
+    private $security_options;
 
     /**
      * @param Configurator $config Object with configs definition
@@ -173,7 +178,7 @@ class Router {
             $this->routes[$route_logout->getRequestMethod()][] = $route_logout;
         });
 
-        $this->options_security = $options;
+        $this->security_options = $options;
 
         return $this;
     }
@@ -320,8 +325,8 @@ class Router {
         $request_uri = $this->filterRequestUri($server['REQUEST_URI']);
 
         // Check for security parameters
-        if($this->options_security) {
-            $firewall = Authentication::firewall($this->options_security, $request_uri);
+        if($this->security_options) {
+            $firewall = Authentication::firewall($this->security_options, $request_uri);
             if(null != $firewall) return $firewall;
         }
 

@@ -74,6 +74,13 @@ class Request {
     private $parameters;
 
     /**
+     * Store the regex matches from route path
+     * 
+     * @var array
+     */
+    private $matches;
+
+    /**
      * Construct the request
      */
     public function __construct(
@@ -123,6 +130,8 @@ class Request {
      * @return Bag
      */
     public function getBodyParams(): Bag {
+        $json_post = json_decode(file_get_contents('php://input'), true);
+        $this->body = array_merge($this->body, $json_post);
         return new Bag($this->body);
     }
 
