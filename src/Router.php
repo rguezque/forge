@@ -104,6 +104,8 @@ class Router {
      */
     private $loader;
 
+    private $options_security;
+
     /**
      * @param Configurator $config Object with configs definition
      */
