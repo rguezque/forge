@@ -477,6 +477,7 @@ La clase `Request` representa una petición HTTP del lado del servidor. Los mét
 - `fromGlobals()`: Método estático que crea un `Request` a partir de los globales `$_GET`, `$_POST`, `$_SERVER`, `$_COOKIE`, `$_FILES`, y un *array* vacío para los parámetros nombrados de las rutas. Los *getters* devuelven un objeto `Bag` (Ver [The Bag Class](#the-bag-class)).
 - `getQueryParams()`: Devuelve los parámetros de `$_GET`.
 - `getBodyParams()`: Devuelve los parámetros de `$_POST`.
+- `getPhpInputStream()`: Devuelve el contenido del *stream* de solo lectura `php://input`. Se da por hecho que el contenido de la petición está en formato *json*.
 - `getServerParams()`: Devuelve los parámetros de `$_SERVER`.
 - `getCookieParams()`: Devuelve los parámetros de `$_COOKIE`.
 - `getUploadedFiles()`: Devuelve los parámetros de `$_FILES`.

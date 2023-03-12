@@ -14,6 +14,7 @@ namespace Forge\Route;
  * @method Request fromGlobals() Create request with superglobals
  * @method Bag getQueryParams() Return the $_GET params
  * @method Bag getBodyParams() Return the $_POST params
+ * @method Bag getPhpInputStream() Return the 'php://input' read-only stream that allows you to read raw data from the request body
  * @method Bag getServerParams() Return the $_SERVER params
  * @method Bag getCookieParams() Return the $_COOKIE params
  * @method Bag getUploadedFiles() Return the $_FILE params
@@ -130,9 +131,19 @@ class Request {
      * @return Bag
      */
     public function getBodyParams(): Bag {
-        $json_post = json_decode(file_get_contents('php://input'), true);
-        $this->body = array_merge($this->body, $json_post);
         return new Bag($this->body);
+    }
+
+    /**
+     * Return the 'php://input' read-only stream that allows you to read raw data from the request body
+     * 
+     * @return Bag
+     */
+    public function getPhpInputStream(): Bag {
+        $stream = file_get_contents('php://input');
+        $data = json_decode($stream, true);
+        
+        return new Bag($data);
     }
 
     /**
