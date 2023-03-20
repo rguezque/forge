@@ -87,7 +87,7 @@ class MySQL {
         $persistent = $params['persistent'] ?? true;
         $this->dbs[$name]['params'] = [
             'dsn' => $dsn,
-            'úsername' => $username,
+            'username' => $username,
             'password' => $password,
             'persistent' => $persistent
         ];
