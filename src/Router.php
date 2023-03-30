@@ -17,8 +17,6 @@ use Forge\Exceptions\RouteNotFoundException;
 use Forge\Exceptions\UnsupportedRequestMethodException;
 use Forge\Interfaces\EngineInterface;
 use InvalidArgumentException;
-use ReflectionClass;
-use stdClass;
 
 use function Forge\functions\generator;
 use function Forge\functions\namespace_format;
@@ -33,6 +31,7 @@ use function Forge\functions\str_path;
  * @method Router setEngine(EngineInterface $engine) Set a router engine, tells how to process request and response
  * @method Router addRoute(Route $route) Add a route to the route collection
  * @method Router addRouteGroup(string $namespace, Route ...$routes) Add routes group with a common namespace
+ * @method Router cors(array $allowed_origins) Enable Cross-Origin Resources Sharing
  * @method Router security(array $options) Define security parameters for router using login
  * @method Response handleRequest(Request $request) Handle the request URI and routing
  */
@@ -124,7 +123,7 @@ class Router {
     /**
      * Enable Cross-Origin Resources Sharing
      * 
-     * @param string[] Array with allowed origins (allow regex)
+     * @param string[] Array with allowed origins (allow regex). Ej: '(http(s)://)?(www\.)?localhost:3000'
      * @return Router
      */
     public function cors(array $allowed_origins): Router {
