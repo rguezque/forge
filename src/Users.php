@@ -100,7 +100,7 @@ class Users {
      * @param string $username Username
      * @param string $password Password
      * @return array
-     */
+     */ 
 	public function findUser(string $username, string $password): array {
         $sql = sprintf('SELECT * FROM %s WHERE %s = :username AND %s = :password', $this->tablename, $this->identity_field, $this->credential_field);
 		$query = $this->connection->prepare($sql);

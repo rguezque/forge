@@ -66,7 +66,7 @@ class Authentication {
         // If redirect field form was not defined get the origin form uri
         $redirect = $credentials->get('_redirect_success') ?? $origin_form;
 
-        if($users->login($username, $password)) {
+        if($users->findUser($username, $password)) {
             $session =  new Session('FAuth');
             $session->set('username', $users->getUsername());
             $session->set('role', $users->getRole());
