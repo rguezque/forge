@@ -104,6 +104,13 @@ class Router {
     private $loader;
 
     /**
+     * Allowed origins for CORS
+     * 
+     * @var string[]
+     */
+    private $allowed_origins = [];
+
+    /**
      * Contain security options
      * 
      * @var array
@@ -121,23 +128,14 @@ class Router {
     }
 
     /**
-     * Enable Cross-Origin Resources Sharing
+     * Set the Cross-Origin Resources Sharing
      * 
      * @param string[] Array with allowed origins (allow regex). Ej: '(http(s)://)?(www\.)?localhost:3000'
      * @return Router
      */
     public function cors(array $allowed_origins): Router {
-        if (isset($_SERVER['HTTP_ORIGIN']) && $_SERVER['HTTP_ORIGIN'] != '') {
-            foreach ($allowed_origins as $allowed_origin) {
-                if (preg_match('#' . $allowed_origin . '#', $_SERVER['HTTP_ORIGIN'])) {
-                    header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']);
-                    header('Access-Control-Allow-Methods: GET, PUT, POST, DELETE, OPTIONS');
-                    header('Access-Control-Max-Age: 1000');
-                    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-                    break;
-                }
-            }
-        }
+        $this->allowed_origins = $allowed_origins;
+        
         return $this;
     }
 
@@ -316,6 +314,7 @@ class Router {
         static $invoke_once = false;
 
         if(!$invoke_once) {
+            $this->resolveCors($request);
             $this->saveRouteNamesToGlobals();
             $this->resolveRouteGroups();
             $invoke_once = true;
@@ -442,6 +441,28 @@ class Router {
 
         if([] !== $matches) {
             $params['@matches'] = $matches;
+        }
+    }
+
+    /**
+     * Enable Cross-Origin Resources Sharing
+     * 
+     * @param Request $request Request object
+     * @return void
+     */
+    private function resolveCors(Request $request): void {
+        $server = $request->getServerParams();
+
+        if ($server->has('HTTP_ORIGIN') && $server->get('HTTP_ORIGIN') != '') {
+            foreach ($this->allowed_origins as $allowed_origin) {
+                if (preg_match('#' . $allowed_origin . '#', $server->get('HTTP_ORIGIN'))) {
+                    header('Access-Control-Allow-Origin: ' . $server->get('HTTP_ORIGIN'));
+                    header('Access-Control-Allow-Methods: ' . implode(', ', $this->supported_request_methods));
+                    header('Access-Control-Max-Age: 1000');
+                    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+                    break;
+                }
+            }
         }
     }
 

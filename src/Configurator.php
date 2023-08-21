@@ -8,6 +8,8 @@
 
 namespace Forge\Route;
 
+use InvalidArgumentException;
+
 use function Forge\functions\add_trailing_slash;
 use function Forge\functions\str_path;
 
@@ -23,15 +25,28 @@ class Configurator extends Router {
      */
     private $options;
 
+    private $available_options = [
+        'set.basepath', 
+        'set.views.path', 
+        'set.supported.request.methods', 
+        'add.supported.request.methods'
+    ];
+
     /**
      * Receive an array with options
      * 
      * @param array $options Router options
+     * @throws InvalidArgumentException
      */
     public function __construct(array $options) {
-        $this->options = new Arguments(
-            array_change_key_case($options, CASE_LOWER)
-        );
+        $options = array_change_key_case($options, CASE_LOWER);
+        $bad_options = array_diff(array_keys($options), $this->available_options);
+
+        if(0 < count($bad_options)) {
+            throw new InvalidArgumentException(sprintf('Next options are invalid for router configuration: %s', implode(', ', $bad_options)));
+        }
+
+        $this->options = new Arguments($options);
     }
 
     /**
@@ -42,7 +57,7 @@ class Configurator extends Router {
     public function __invoke(Router &$router) {
         foreach($this->options->keys() as $method) {
             $action = $this->generateName($method);
-            $this->{$action}($router);
+            call_user_func([$this, $action], $router);
         }
     }
 
