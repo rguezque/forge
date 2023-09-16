@@ -14,6 +14,7 @@ use Forge\Interfaces\BagInterface;
 /**
  * Represents a PHP session.
  * 
+ * @method Session select(string $namespace) Select a collection of session vars into a namespace. Alias for new Session('some_session_name')
  * @method void start() Starts once a session
  * @method bool started() Return true if already exists an active session, otherwise false
  * @method void set(string $key, $value) Set or overwrite a session var
@@ -44,6 +45,16 @@ class Session implements ArgumentsInterface, BagInterface {
     public function __construct(string $namespace) {
         $this->start();
         $this->namespace = trim($namespace);
+    }
+
+    /**
+     * Select a collection of session vars into a namespace. Alias for new Session('some_session_name')
+     * 
+     * @param string $namespace Namespace for session vars
+     * @return Session
+     */
+    public static function select(string $namespace): Session {
+        return new Session($namespace);
     }
 
     /**

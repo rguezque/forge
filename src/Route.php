@@ -24,6 +24,7 @@ use function Forge\functions\str_prepend;
  * @method string getAction() Retrieve the action(method) name of the route controller
  * @method string getRequestMethod() Retrieve the request method for the route
  * @method string getPattern() Retrieve the regex pattern of the route
+ * @method void setBefore(callable $action) set a middleware for controller
  */
 class Route {
 
@@ -68,6 +69,13 @@ class Route {
      * @var array
      */
     protected $arguments = [];
+
+    /**
+     * Middleware to execute before the controller
+     * 
+     * @var callable
+     */
+    protected $hook = null;
 
     /**
      * Create the route definition

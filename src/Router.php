@@ -12,7 +12,6 @@ use Closure;
 use Composer\Autoload\ClassLoader;
 use Forge\Exceptions\BadNameException;
 use Forge\Exceptions\DuplicityException;
-use Forge\Exceptions\MissingArgumentException;
 use Forge\Exceptions\RouteNotFoundException;
 use Forge\Exceptions\UnsupportedRequestMethodException;
 use Forge\Interfaces\EngineInterface;
@@ -22,17 +21,15 @@ use function Forge\functions\generator;
 use function Forge\functions\namespace_format;
 use function Forge\functions\remove_trailing_slash;
 use function Forge\functions\str_ends_with;
-use function Forge\functions\str_path;
 
 /**
  * Router
  * 
  * @method void addNamespaces(array $namespaces, bool $prepend = false) Add namespaces for controllers. The paths for namespaces can be a string or an array of PSR-4 base directories
+ * @method Router cors(array $origins) Set the Cross-Origin Resources Sharing
  * @method Router setEngine(EngineInterface $engine) Set a router engine, tells how to process request and response
- * @method Router addRoute(Route $route) Add a route to the route collection
- * @method Router addRouteGroup(string $namespace, Route ...$routes) Add routes group with a common namespace
- * @method Router cors(array $allowed_origins) Enable Cross-Origin Resources Sharing
- * @method Router security(array $options) Define security parameters for router using login
+ * @method Route addRoute(Route $route) Add a route to the route collection
+ * @method RouteGroup addRouteGroup(string $namespace, Route ...$routes) Add routes group with a common namespace
  * @method Response handleRequest(Request $request) Handle the request URI and routing
  */
 class Router {
@@ -111,19 +108,13 @@ class Router {
     private $allowed_origins = [];
 
     /**
-     * Contain security options
-     * 
-     * @var array
-     */
-    private $security_options;
-
-    /**
      * @param Configurator $config Object with configs definition
      */
     public function __construct(?Configurator $config = null) {
         if(null !== $config) {
             $config($this);
         }
+        
         $this->loader = new ClassLoader;
     }
 
@@ -136,68 +127,6 @@ class Router {
     public function cors(array $allowed_origins): Router {
         $this->allowed_origins = $allowed_origins;
         
-        return $this;
-    }
-
-    /**
-     * Define security parameters for router using login
-     * 
-     * @param array $options Security parameters
-     * @throws MissingArgumentException
-     * @throws InvalidArgumentException
-     * @throws BadNameException
-     * @return Router
-     */
-    public function security(array $options): Router {
-        // Check for all keys options array
-        foreach($options as $option_group) {
-            $missed = array_diff(['protect', 'form', 'roles'], array_keys($option_group));
-            if(0 < sizeof($missed)) {
-                throw new MissingArgumentException(sprintf('Missing security options %s', implode(', ', $missed)));
-            }
-        }
-
-        // Check for nomenclature of roles
-        foreach($options as $option_group) {
-            $roles = $option_group['roles'];
-            if(!is_array($roles)) {
-                throw new InvalidArgumentException(sprintf('The key "roles" must be declared as array, catched %s', gettype($roles)));
-            }
-            foreach($roles as $role) {
-                if(!str_starts_with($role, 'ROLE_')) {
-                    throw new BadNameException('The role names must start with prefix "ROLE_".');
-                }
-            }
-        }
-
-        // Add the login and logout routes
-        array_walk($options, function(&$item) {
-            $basepath = '' == $this->basepath ?: str_path($this->basepath);
-            $form = str_path($item['form']);
-            $item['form'] = $basepath.$form; // Add basepath to   
-            $item['login'] = $form.'/login';
-            $item['logout'] = $form.'/logout';
-
-            // Create route names
-            $name = str_replace('/', '_', trim($item['form'], '/\\'));
-            $name_login = $name.'_login';
-            $name_logout = $name.'_logout';
-            // Create the routes
-            $route_login = new Route($name_login, $item['login'], Authentication::class, 'login', Router::POST);
-            $route_logout = new Route($name_logout, $item['logout'], Authentication::class, 'logout', Router::GET);
-            // Add the basepath
-            $route_login->prependStringPath($this->basepath);
-            $route_logout->prependStringPath($this->basepath);
-            // Save the route names
-            $this->route_names[$name_login] = $route_login->getPath();
-            $this->route_names[$name_logout] = $route_logout->getPath();
-            // Add the routes
-            $this->routes[$route_login->getRequestMethod()][] = $route_login;
-            $this->routes[$route_logout->getRequestMethod()][] = $route_logout;
-        });
-
-        $this->security_options = $options;
-
         return $this;
     }
 
@@ -277,11 +206,13 @@ class Router {
      * 
      * @param string $prefix Group prefix
      * @param Closure $closure Closure with routes definition
-     * @return Router
+     * @return RouteGroup
      */
-    public function addRouteGroup(string $prefix, Closure $closure): Router {
-        $this->routes_group[] = new RouteGroup($prefix, $closure, $this);
-        return $this;
+    public function addRouteGroup(string $prefix, Closure $closure): RouteGroup {
+        $group = new RouteGroup($prefix, $closure, $this);
+        $this->routes_group[] = $group;
+        
+        return $group;
     }
 
     /**
@@ -343,12 +274,6 @@ class Router {
         // Catch the request uri
         $request_uri = $this->filterRequestUri($server['REQUEST_URI']);
 
-        // Check for security parameters
-        if($this->security_options) {
-            $firewall = Authentication::firewall($this->security_options, $request_uri);
-            if(null != $firewall) return $firewall;
-        }
-
         /**
          * Select the route collection according the request method and implement a generator. 
          * Send an empty array in case of inexistents routes with the request method.
@@ -376,7 +301,7 @@ class Router {
                 // Add arguments from the parsed URI to the request object
                 $request->withParameters($arguments);
         
-                // Verifies if a specific engine was defined and applies it, otherwise set default engine
+                // Verify if a specific engine was defined and applies it, otherwise set default engine
                 $this->engine = $this->engine ?? new ApplicationEngine();
                 $response = $this->engine->resolve($route, $request);
         

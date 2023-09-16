@@ -36,8 +36,12 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
   - [Extending the template](#extending-the-template)
   - [Render](#render)
 - [Configurator](#configurator)
+- [DB Connection](#db-connection)
+  - [Connecting using an URL](#connecting-using-an-url)
+  - [Auto connect](#auto-connect)
+
 - [Handler](#handler)
-- [Authentication](#authentication)
+- [Users](#users)
 - [Functions](#functions)
 
 
@@ -401,6 +405,7 @@ Esta clase permite crear contenedores e inyectar dependencias. Cuenta con cinco 
 - `Injector::get`: Recupera una dependencia por su nombre. Opcionalmente puede recibir como segundo argumento un *array* con argumentos (válgase la redundancia) utilizados por la dependencia solicitada, esto es útil cuando la dependencia es una función cuyo resultado dependerá de parámetros enviados al momento de llamarla. En el caso de que la dependencia sea una clase instanciada, estos argumentos se inyectarán al final, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
 - `Injector::has`: Verifica si existe una dependencia por su nombre.
 
+
 ## Services Provider
 
 La clase `Services` permite crear un proveedor de servicios. A cada motor de funcionamiento del router (`ApplicationEngine` o `JsonEngine`) se le puede asignar un proveedor con el método `EngineInterface::setServices` desde el cual se podrá tener acceso en toda la aplicación. La diferencia con un contenedor es que el proveedor de servicios inyecta los servicios registrados a cada **método** de un *controller class* y todos los servicios son accesibles en toda la aplicación, mientras que el contenedor solo inyecta las dependencias agregadas al **constructor** de cada clase especificada y solo están disponibles estas dependencias en dicha clase que se inyectan.
@@ -720,6 +725,63 @@ $router = new Router($configurator);
 //...
 ```
 
+## DB Connection
+
+La clase `DbConnection` proporciona el medio para crear una conexión *singleton* con MySQL a través del driver `PDO` o la clase `mysqli`. El método estático `DbConnection::getConnection` recibe los parámetros de conexión y devuelve un objeto con la conexión creada dependiendo del parámetro `driver` donde se define si se utilizara por default MySQL con `PDO` o con `mysqli`.
+
+```php
+use Forge\Route\DbConnection;
+
+$db = DbConnection::getConnection([
+    // 'driver' => 'mysqli',
+    'driver' => 'mysql', // Se usa PDO
+    'host' => 'localhost',
+    'port' => 3306,
+    'user' => 'root',
+    'pass' => 'mypassword',
+    'dbname' => 'mydatabase'
+    'charset' => 'utf8'
+]);
+```
+
+### Connecting using an URL
+
+Otra alternativa es usar una *database URL* como parámetro de conexión, a través del método estático `DbConnection::dsnParser`; este recibe una URL y la procesa para ser enviada a `DbConnection::getConnection` de la siguiente forma:
+
+```php
+use Forge\Route\DbConnection;
+
+// Con mysqli
+// 'mysqli://root:mypassword@127.0.0.1/mydatabase?charset=utf8'
+// Con PDO
+$connection_params = DbConnection::dsnParser('mysql://root:mypassword@127.0.0.1/mydatabase?charset=utf8');
+$db = DbConnection::getConnection($connection_params);
+```
+
+### Auto connect
+
+El método estático `DbConnection::autoConnect` realiza una conexión a MySQL tomando automáticamente los parámetros definidos en un archivo `.env`. 
+
+```php
+use Forge\Route\DbConnection;
+
+$db = DbConnection::autoConnect();
+```
+
+El archivo `.env` debería verse mas o menos así:
+
+```
+DB_DRIVER="mysqli"
+DB_NAME="mydatabase"
+DB_HOST="127.0.0.1"
+DB_PORT=3306
+DB_USER="root"
+DB_PASS="mypassword"
+DB_CHARSET="utf8"
+```
+
+**Nota:** Se debe usar alguna librería que permita procesar la variables almacenadas en `.env` y cargarlas en las variables `$_ENV`.
+
 ## Handler
 
 Esta clase se encarga de configurar el manejador de errores tanto en modo <u>*production*</u> como <u>*development*</u>, así como la zona horaria para el manejo correcto de fechas en PHP. Recibe un array asociativo con tres parámetros: `log_path`, `environment` y `timezone`; no importa el orden en que se declaren. Debe declararse al inicio, antes que todo en el controlador frontal. Las configuraciones se aplican con solo crear una instancia de `Handler` o con el método estático `Handler::configure` que de igual forma recibe los parámetros ya mencionados.
@@ -734,81 +796,7 @@ new Handler([
 ]);
 ```
 
-## Authentication
-
-El router cuenta con un sencillo sistema de autenticación de usuarios, el cual se compone de tres elementos: la clase `Authentication`, la clase `Users` y una conexión a **MySQL** mediante `PDO`; además de los parámetros de seguridad que se definen con `Router::security`.
-
-El primer paso es definir los parámetros de seguridad:
-
-```php
-use App\TestController;
-use Forge\Route\ApplicationEngine;
-use Forge\Route\Authentication;
-use Forge\Route\Emitter;
-use Forge\Route\Injector;
-use Forge\Route\Request;
-use Forge\Route\Route;
-use Forge\Route\Router;
-use Forge\Route\Users;
-use PDO;
-
-require __DIR__.'/vendor/autoload.php';
-
-$app = new Router();
-
-$app->addNamespaces([
-    'App\\' => __DIR__.'/app'
-]);
-
-$app->addRoute(new Route('index', '/', TestController::class, 'indexAction'));
-$app->addRoute(new Route('form', '/form_admin', TestController::class, 'formAction'));
-$app->addRoute(new Route('admin', '/admin', TestController::class, 'adminAction'));
-
-$app->security([
-    [
-        'protect' => '/admin',
-        'form' => '/form_admin', // Esta ruta debe registrarse
-        'roles' => ['ROLE_ADMIN', 'ROLE_SUPER']
-    ],
-    [
-        'protect' => '/super',
-        'form' => '/form_super', // Esta ruta también debe registrarse
-        'roles' => ['ROLE_SUPER']
-    ]
-]);
-
-$container = new Injector;
-$container->add(TestController::class);
-$container->add(PDO::class)->addParameters([
-    'mysql:dbname=ejemplo;host=localhost;port=3306;charset=utf8',
-    'usuario',
-    'contrasena'
-]);
-$container->add(Users::class)->addParameter(PDO::class);
-$container->add(Authentication::class)->addParameter(Users::class);
-
-$engine = new ApplicationEngine;
-$engine->setContainer($container);
-
-$app->setEngine($engine);
-
-$response = $app->handleRequest(Request::fromGlobals());
-Emitter::emit($response);
-```
-
-En este ejemplo, ``Router::security` define los parámetros de seguridad. En este caso se han definido dos rutas protegidas `/admin` y `/super` donde por cada ruta a proteger se define un array con claves. Tomando como ejemplo la ruta `/admin`:
-
-- `protect`: Define la ruta a proteger y sus sub rutas.
-- `form`: La ruta donde se encuentra el formulario de inicio de sesión para la ruta protegida. Deberá crear el controlador para el formulario y agregarlo al router de la forma habitual. Las rutas donde se envían el nombre de usuario y contraseña para hacer el *login* siempre será la sub ruta `/login` . Ejem. `/form_admin/login`. A su vez la ruta para el *logout* sería `/form_admin/logout` el cual al cerrar sesión redirecciona al formulario. Si desea redireccionar a otra ruta al cerrar sesión se debe definir como petición GET: `/form_admin/logout/?redirect=otra_ruta`
-
-	En el formulario HTML se deben definir los input con nombres `_username` y `_password` respectivamente y un input oculto `_redirect_success` que indica la ruta donde se redirigirá (dentro de su respectiva área) en caso de iniciar sesión con éxito. 
-- `roles`: Los roles de usuario permitidos para la ruta protegida. Siempre deben iniciar con el prefijo `ROLE_`. Cada vez que se quiera acceder a una ruta protegida se verificará que se haya iniciado sesión y que el rol de usuario sea alguno de los aceptados.
-
-Luego de debe agregar la clase `Authentication` al contenedor, o bien registrarla como un servicio, según sea el caso, esta clase contiene los métodos para *login*, *logout* y verificar los permisos de acceso. 
-
-De igual manera se debe agregar o registrar la clase `Users` que debe ser inyectada a la clase `Authentication`; esta clase contiene los métodos para buscar usuario y contraseña en la BD y recuperar los datos de usuario autenticado. Por lo cual debe agregarse una conexión `PDO` la cual será inyectada a la clase `Users` . A continuación los métodos y opciones de la clase `users`.
-
-### Users
+## Users
 
 La clase `Users` recibe 2 parámetros, una conexión PDO y un array opcional que define los nombres de la tabla y campos donde se buscara a los usuarios. Por default se buscara por usuarios en la tabla `users` donde el campo de usuario deberá llamarse `username` y el campo de la contraseña deberá llamarse `password`. Sin embargo puede definir su propio nombre de la tabla de usuarios así como los campos de usuario y contraseña, ya sea al momento de crear la instancia de `Users` o con los métodos: `setUsersTable`, `setIdentityField`, `setCredentialField` después de creada la instancia.
 

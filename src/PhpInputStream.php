@@ -23,30 +23,39 @@ class PhpInputStream {
      */
     private $stream;
 
-    function __construct($body = 'php://input') {
+    public function __construct($body = 'php://input') {
         $this->stream = file_get_contents($body);
     }
 
     /**
-     * Parses the raw query string into variables
+     * Return the parsed raw query string into variables
      * 
      * @return Bag
      */
-    function getParsedStr(): Bag {
+    public function getParsedStr(): Bag {
         parse_str($this->stream, $data);
 
         return new Bag($data);
     }
 
     /**
-     * Decode variables from a json string
+     * Return decoded variables from a json string
      * 
      * @return Bag
      */
-    function getDecodedJson(): Bag {
+    public function getDecodedJson(): Bag {
         $data = json_decode($this->stream, true);
 
         return new Bag($data);
+    }
+
+    /**
+     * Return the raw stream
+     * 
+     * @return string
+     */
+    public function getRaw(): string {
+        return $this->stream;
     }
 
 }
