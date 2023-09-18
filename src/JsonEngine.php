@@ -71,9 +71,10 @@ class JsonEngine implements EngineInterface {
             $result = call_user_func([$class, $action], $request);
         }
         
-        /* if(!is_assoc_array($result)) {
-            throw new UnexpectedValueException(sprintf('%s::%s() must return an associative array, catched %s', get_class($class), $action, gettype($result)));
-        } */
+        if(!is_array($result)) {
+            ob_end_clean();
+            throw new UnexpectedValueException(sprintf('%s::%s() must return an array, catched %s', get_class($class), $action, gettype($result)));
+        }
         
         return new JsonResponse($result);
     }

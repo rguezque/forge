@@ -72,6 +72,7 @@ class ApplicationEngine implements EngineInterface {
         }
         
         if(!$result instanceof Response) {
+            ob_end_clean();
             throw new UnexpectedValueException(sprintf('%s::%s() must return a Response object, catched %s', get_class($class), $action, gettype($result)));
         }
 
