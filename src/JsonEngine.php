@@ -72,8 +72,8 @@ class JsonEngine implements EngineInterface {
         }
         
         if(!is_array($result)) {
-            ob_end_clean();
-            throw new UnexpectedValueException(sprintf('%s::%s() must return an array, catched %s', get_class($class), $action, gettype($result)));
+            $buffer = ob_get_clean();
+            throw new UnexpectedValueException(sprintf('%s::%s() must return an array, catched %s', get_class($class), $action, gettype($buffer)));
         }
         
         return new JsonResponse($result);
