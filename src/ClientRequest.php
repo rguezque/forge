@@ -18,6 +18,8 @@ namespace Forge\Route;
  * @method ClientRequest withTokenAuth(string $token) Add an Authorization header for JWT authorization
  * @method ClientRequest withPostFields($data, bool $encode = true) Add posts fields to send to request
  * @method string|bool send() Send the client request
+ * @method mixed getContent() Return the result of http client request
+ * @method array toArray() Return the result of http client request decoded from json to an associative array
  * @method array getInfo() Retrieves info about the responsed request
  */
 class ClientRequest {
@@ -93,6 +95,13 @@ class ClientRequest {
     private $info_request = [];
 
     /**
+     * Resutt of client request
+     * 
+     * @var mixed
+     */
+    private $result;
+
+    /**
      * Prepare the request
      * 
      * @var string $uri URI to send the request
@@ -101,7 +110,6 @@ class ClientRequest {
     public function __construct(string $uri, string $method = ClientRequest::GET) {
         $this->uri = $uri;
         $this->withRequestMethod($method);
-        $this->withHeader('Content-Type', 'application/json;charset=UTF-8');
     }
 
     /**
@@ -194,34 +202,39 @@ class ClientRequest {
      * @return string|bool
      */
     public function send() {
-        $curl = curl_init($this->uri);
+        $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $this->uri);
 
-        switch($this->method) {
-            case 'POST':
-            case 'PUT':
-            case 'PATCH':
-            case 'DELETE':
-                curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $this->method); 
-                curl_setopt($curl, CURLOPT_FAILONERROR, true);
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $this->data_string);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                $this->withHeader('Content-Length', (string) strlen($this->data_string));
-                curl_setopt($curl, CURLOPT_HTTPHEADER, $this->getHeaders());
-
-                break;
-            case 'GET':
-                curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
-		        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-                break;
-        }
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $this->method); 
+        curl_setopt($curl, CURLOPT_FAILONERROR, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $this->data_string);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $this->getHeaders());
 
         $result = curl_exec($curl);
+        
         $this->info_request = curl_getinfo($curl);
         curl_close($curl);
         
-        return $result;
+        $this->result = $result;
+    }
+
+    /**
+     * Return the result of http client request
+     * 
+     * @return mixed
+     */
+    public function getContent() {
+        return $this->result;
+    }
+
+    /**
+     * Return the result of http client request decoded from json to an associative array
+     * 
+     * @return array
+     */
+    public function toArray(): array {
+        return json_decode($this->result, true);
     }
 
     /**
