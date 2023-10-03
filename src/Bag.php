@@ -6,9 +6,9 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
-use Forge\Interfaces\BagInterface;
+use rguezque\Forge\Interfaces\BagInterface;
 use JsonSerializable;
 
 /**

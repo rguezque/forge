@@ -6,12 +6,12 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
 use Closure;
-use Forge\Exceptions\BadNameException;
-use Forge\Exceptions\DuplicityException;
-use Forge\Exceptions\NotFoundException;
+use rguezque\Forge\Exceptions\BadNameException;
+use rguezque\Forge\Exceptions\DuplicityException;
+use rguezque\Forge\Exceptions\NotFoundException;
 use InvalidArgumentException;
 
 /**

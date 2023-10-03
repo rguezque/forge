@@ -6,9 +6,9 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\functions;
+namespace rguezque\Forge\functions;
 
-use Forge\Exceptions\FileNotFoundException;
+use rguezque\Forge\Exceptions\FileNotFoundException;
 use Generator;
 
 /**

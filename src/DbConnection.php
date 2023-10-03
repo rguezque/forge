@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
 use InvalidArgumentException;
 use mysqli;
@@ -75,9 +75,9 @@ class DbConnection {
     /**
      * Return a PDO connection from stored params into .env file (using dotenv library)
      * 
-     * @return PDO
+     * @return PDO|mysqli
      */
-    public static function autoConnect(): PDO {
+    public static function autoConnect() {
         if(isset($_ENV['DB_DRIVER']) && !in_array($_ENV['DB_DRIVER'], ['pdomysql', 'mysqli'])) {
             throw new InvalidArgumentException('Invalid value for "DB_DRIVER" variable, mandatory to define as "pdomysql" or "mysqli".');
         }

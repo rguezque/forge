@@ -6,10 +6,10 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
-use Forge\Exceptions\NotFoundException;
-use Forge\Interfaces\EngineInterface;
+use rguezque\Forge\Exceptions\NotFoundException;
+use rguezque\Forge\Interfaces\EngineInterface;
 use ReflectionClass;
 use UnexpectedValueException;
 

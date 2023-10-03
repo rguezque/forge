@@ -6,10 +6,10 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
-use function Forge\functions\str_path;
-use function Forge\functions\str_prepend;
+use function rguezque\Forge\functions\str_path;
+use function rguezque\Forge\functions\str_prepend;
 
 /**
  * Represents a route.
@@ -80,24 +80,24 @@ class Route {
     /**
      * Create the route definition
      * 
+     * @param string $request_method Route request method
      * @param string $name Route name
      * @param string $path Route string path
      * @param string $controller Controller name
      * @param string $action Action name
-     * @param string $request_method Route request method
      */
     public function __construct(
+        string $request_method,
         string $name, 
         string $path, 
         string $controller, 
-        string $action, 
-        string $request_method = Router::GET
+        string $action
     ) {
+        $this->request_method = $request_method;
         $this->name           = $name;
         $this->path           = str_path($path);
         $this->controller     = $controller;
         $this->action         = $action;
-        $this->request_method = $request_method;
     }
 
     /**

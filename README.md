@@ -99,8 +99,8 @@ El método `Router::handleRequest` procesa el Request, hace el enrutamiento y de
 
 ```php
 use Application\Http\FooController;
-use Forge\Exceptions\RouteNotFoundException;
-use Forge\Route\{
+use rguezque\Forge\Exceptions\RouteNotFoundException;
+use rguezque\Forge\Route\{
     Emitter,
     Request,
     Response,
@@ -135,6 +135,31 @@ try {
     );
 }
 Emitter::emit($response);
+```
+
+## Configure router
+
+El router puede recibir como parámetros un array asociativo con las opciones disponibles de configuración. Las opciones disponibles son:
+
+- `'set.basepath'`: Especifica un directorio base en caso de que el router este alojado en un subdirectorio de la raíz del servidor.
+
+- `'set.supported.request.methods'`: Define un *array* que sobrescribe los métodos de petición http permitidos por el router. Por default el router acepta `GET` y `POST`.
+
+- `'set.views.path'`: *(Opcional)* Especifica un directorio global donde se buscarán por default los archivos de *templates* para las vistas, ya sea para rutas que renderizan vistas (`RouteView`) o bien para la clase `View`. 
+
+  **Nota:** Si se define un nuevo directorio de *templates* al crear un objeto de `View`  este tendrá preferencia sobre el directorio global.
+
+
+```php
+use rguezque\Forge\Route\Router;
+
+$router = new Router([
+    'set.basepath' => '/myapp',
+    'set.supported.request.methods' => ['PATCH'],
+    'set.viewspath' => __DIR__.'/templates'
+]);
+//$router->addRoute(...)
+//...
 ```
 
 ## Routes
@@ -245,8 +270,8 @@ $router->addRoute(new Route('hola_page', '/hola/{nombre}/{apellido}', FooControl
 // app/Http/FooController.php
 namespace App\Http;
 
-use Forge\Route\Request;
-use Forge\Route\Response;
+use rguezque\Forge\Route\Request;
+use rguezque\Forge\Route\Response;
 
 class FooController {
 
@@ -279,20 +304,6 @@ build_query('/path', [
 
 // Los valores anteriores se recuperan en un objeto Bag con:
 $params = $request->getQueryParams()
-```
-
-## Add namespaces
-
-Antes de usar los controladores es necesario registrar los *namespaces* correspondientes. El método `Router::addNamespaces` permite hacerlo fácilmente; recibe como parámetro un *array asociativo* donde cada clave es el *namespace* (debe terminar siempre con  *backslashes*) y su valor es la ruta al directorio de los controladores.
-
-```php
-use Application\Http\FooController;
-
-$router = new Router;
-// Se registra el namespace de 'FooController'
-$router->addNamespaces([
-    'Application\\Http\\' => __DIR__.'/app/Http' 
-]);
 ```
 
 ## Engine
@@ -502,7 +513,7 @@ La clase `Request` representa una petición HTTP del lado del servidor. Los mét
 La clase `ClientRequest` representa peticiones HTTP desde el lado del cliente.
 
 ```php
-use Forge\Route\ClientRequest;
+use rguezque\Forge\Route\ClientRequest;
 
 // Si se omite el segundo parámetro se asume que será una petición GET
 $request = new ClientRequest('https://jsonplaceholder.typicode.com/posts', 'POST');
@@ -564,7 +575,7 @@ return new RedirectResponse('/hola/John/Doe');
 Esta clase solo contiene el método estático `Emitter::emit`, y recibe como parámetro un objeto `Response`. Se encarga de "emitir" el response.
 
 ```php
-use Forge\Route\{Emitter, Router, Reques};
+use rguezque\Forge\Route\{Emitter, Router, Reques};
 
 //...
 $response = $router->handleRequest(Request::fromGlobals());
@@ -606,7 +617,7 @@ Las vistas son el medio por el cual el router devuelve y renderiza un objeto `Re
 **Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configurator](#configurator)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
 
 ```php
-use Forge\Route\View;
+use rguezque\Forge\Route\View;
 
 $view = new View(
     __DIR__.'/mis_plantillas', // Directorio donde se alojan los templates
@@ -699,38 +710,12 @@ $view->render();
 
 El método `View::render` se invoca siempre al final y devuelve lo contenido en el actual *buffer* para ser recuperado en una variable y enviado en un `Response`.
 
-## Configurator
-
-Esta clase proporciona el acceso para modificar de manera segura algunas configuraciones del router que son default en principio. Al crear un objeto `Configurator` recibe como parámetros un array asociativo con las opciones disponibles para posteriormente ser inyectado al constructor del router. Las opciones disponibles son:
-
-- `'set.basepath'`: Especifica un directorio base en caso de que el router este alojado en un subdirectorio de la raíz del servidor.
-
-- `'set.views.path'`: Especifica el directorio donde se buscarán por default los archivos de *templates* para las vistas, ya sea para rutas que renderizan vistas (`RouteView`) o bien para la clase `View`.
-
-- `'set.supported.request.methods'`: Define un *array* que sobrescribe los métodos de petición http permitidos por el router. Por default el router acepta `GET` y `POST`.
-
-- `'add.supported.request.methods'`: Define un *array* que agrega métodos de petición http a los ya definidos en el router.
-
-```php
-use Forge\Route\{Configurator, Route};
-
-$configurator = new Configurator([
-    'set.basepath' => '/myapp',
-    'set.views.path' => __DIR__.'/templates',
-    'add.supported.request.methods' => ['PATCH'],
-]);
-
-$router = new Router($configurator);
-//$router->addRoute(...)
-//...
-```
-
 ## DB Connection
 
 La clase `DbConnection` proporciona el medio para crear una conexión *singleton* con MySQL a través del driver `PDO` o la clase `mysqli`. El método estático `DbConnection::getConnection` recibe los parámetros de conexión y devuelve un objeto con la conexión creada dependiendo del parámetro `driver` donde se define si se utilizara por default MySQL con `PDO` o con `mysqli`.
 
 ```php
-use Forge\Route\DbConnection;
+use rguezque\Forge\Route\DbConnection;
 
 $db = DbConnection::getConnection([
     // 'driver' => 'mysqli',
@@ -749,7 +734,7 @@ $db = DbConnection::getConnection([
 Otra alternativa es usar una *database URL* como parámetro de conexión, a través del método estático `DbConnection::dsnParser`; este recibe una URL y la procesa para ser enviada a `DbConnection::getConnection` de la siguiente forma:
 
 ```php
-use Forge\Route\DbConnection;
+use rguezque\Forge\Route\DbConnection;
 
 // Con mysqli
 // 'mysqli://root:mypassword@127.0.0.1/mydatabase?charset=utf8'
@@ -763,7 +748,7 @@ $db = DbConnection::getConnection($connection_params);
 El método estático `DbConnection::autoConnect` realiza una conexión a MySQL tomando automáticamente los parámetros definidos en un archivo `.env`. 
 
 ```php
-use Forge\Route\DbConnection;
+use rguezque\Forge\Route\DbConnection;
 
 $db = DbConnection::autoConnect();
 ```
@@ -787,7 +772,7 @@ DB_CHARSET="utf8"
 Esta clase se encarga de configurar el manejador de errores tanto en modo <u>*production*</u> como <u>*development*</u>, así como la zona horaria para el manejo correcto de fechas en PHP. Recibe un array asociativo con tres parámetros: `log_path`, `environment` y `timezone`; no importa el orden en que se declaren. Debe declararse al inicio, antes que todo en el controlador frontal. Las configuraciones se aplican con solo crear una instancia de `Handler` o con el método estático `Handler::configure` que de igual forma recibe los parámetros ya mencionados.
 
 ```php
-use Forge\Route\Handler;
+use rguezque\Forge\Route\Handler;
 
 new Handler([
     'log_path' => __DIR__.'/var/logs',
@@ -844,7 +829,7 @@ $services->register('users', function() use($services) {
 El router dispone de ciertas funciones que se invocan bajo el namespace `Forge\functions`. Ejemplo:
 
 ```php
-use function Forge\functions\str_ends_with;
+use function rguezque\Forge\functions\str_ends_with;
 
 str_ends_with('FooBar', 'Bar') // Devuelve true
 ```

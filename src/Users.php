@@ -6,7 +6,7 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
 use PDO;
 
@@ -51,7 +51,7 @@ class Users {
      * @param PDO $db PDO connection
      * @param array $properties Schema users table
      */
-	public function __construct(PDO $db, ?array $properties = null) {
+	public function __construct(PDO $db, array $properties = []) {
         $this->connection       = $db;
         $this->tablename        = $properties['tablename'] ?? 'users';
         $this->identity_field   = $properties['identity_field'] ?? 'username';
@@ -108,9 +108,7 @@ class Users {
 		$query->bindValue(':password', $password, PDO::PARAM_STR);
 		$query->execute();
 
-        return ($query->rowCount() >= 1) 
-        ? $query->fetch() 
-        : [];
+        return 0 < $query->rowCount() ? $query->fetch() : [];
 	}
 
 }

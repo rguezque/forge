@@ -6,12 +6,12 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
 use ArgumentCountError;
-use Forge\Exceptions\NotFoundException;
+use rguezque\Forge\Exceptions\NotFoundException;
 
-use function Forge\functions\str_path;
+use function rguezque\Forge\functions\str_path;
 
 /**
  * Generate URIs from route names and parameters.

@@ -6,12 +6,12 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
-use Forge\Exceptions\FileNotFoundException;
+use rguezque\Forge\Exceptions\FileNotFoundException;
 
-use function Forge\functions\remove_leading_slash;
-use function Forge\functions\str_path;
+use function rguezque\Forge\functions\remove_leading_slash;
+use function rguezque\Forge\functions\str_path;
 
 /**
  * Represent a simple route that render a view, without define a controller
@@ -52,7 +52,7 @@ class RouteView extends Route {
         $this->path = str_path($path);
         $this->template = remove_leading_slash($template);
         $this->arguments = $arguments;
-        $this->request_method = Router::GET;
+        $this->request_method = 'GET';
         $this->name = $name;
         $this->views_path = Globals::has('router.views.path') 
             ? Globals::get('router.views.path') 

@@ -2,9 +2,9 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use Forge\Route\Dependency;
-use Forge\Route\Injector;
-use Forge\Route\View;
+use rguezque\Forge\Route\Dependency;
+use rguezque\Forge\Route\Injector;
+use rguezque\Forge\Route\View;
 use PHPUnit\Framework\TestCase;
 
 class InjectorTest extends TestCase {

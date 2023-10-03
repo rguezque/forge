@@ -6,7 +6,7 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Exceptions;
+namespace rguezque\Forge\Exceptions;
 
 /**
  * Lanza una excepción cuando no se encuentra una dependencia en el contenedor.

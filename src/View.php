@@ -6,12 +6,12 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
-use Forge\Exceptions\FileNotFoundException;
-use Forge\Exceptions\MissingArgumentException;
+use rguezque\Forge\Exceptions\FileNotFoundException;
+use rguezque\Forge\Exceptions\MissingArgumentException;
 
-use function Forge\functions\add_trailing_slash;
+use function rguezque\Forge\functions\add_trailing_slash;
 
 /**
  * Render templates.
@@ -49,14 +49,14 @@ class View {
     /**
      * Views constructor
      * 
-     * @param ?string $templates_dir Templates files directory
+     * @param string $templates_dir Templates files directory
      * @throws MissingArgumentException
      */
-    public function __construct(?string $templates_dir = null) {
+    public function __construct(string $templates_dir = '') {
         $this->arguments = new Arguments();
 
-        if(null !== $templates_dir) {
-            $this->path = add_trailing_slash($templates_dir);
+        if('' !== trim($templates_dir)) {
+            $this->path = add_trailing_slash(trim($templates_dir));
         } else if(Globals::has('router.views.path')) {
             $this->path = Globals::get('router.views.path');
         } else {
@@ -73,7 +73,7 @@ class View {
      * @throws FileNotFoundException
      */
 	public function template(string $file, array $params = []): View {
-        $file = $this->path . $file;
+        $file = $this->path . trim($file);
         
         if (!file_exists($file)) {
             throw new FileNotFoundException(sprintf('Don\'t exists the template file "%s".', $file));

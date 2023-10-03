@@ -6,26 +6,24 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
 use Closure;
-use Composer\Autoload\ClassLoader;
-use Forge\Exceptions\BadNameException;
-use Forge\Exceptions\DuplicityException;
-use Forge\Exceptions\RouteNotFoundException;
-use Forge\Exceptions\UnsupportedRequestMethodException;
-use Forge\Interfaces\EngineInterface;
-use InvalidArgumentException;
+use rguezque\Forge\Exceptions\BadNameException;
+use rguezque\Forge\Exceptions\DuplicityException;
+use rguezque\Forge\Exceptions\RouteNotFoundException;
+use rguezque\Forge\Exceptions\UnsupportedRequestMethodException;
+use rguezque\Forge\Interfaces\EngineInterface;
 
-use function Forge\functions\generator;
-use function Forge\functions\namespace_format;
-use function Forge\functions\remove_trailing_slash;
-use function Forge\functions\str_ends_with;
+use function rguezque\Forge\functions\add_trailing_slash;
+use function rguezque\Forge\functions\generator;
+use function rguezque\Forge\functions\remove_trailing_slash;
+use function rguezque\Forge\functions\str_ends_with;
+use function rguezque\Forge\functions\str_path;
 
 /**
  * Router
  * 
- * @method void addNamespaces(array $namespaces, bool $prepend = false) Add namespaces for controllers. The paths for namespaces can be a string or an array of PSR-4 base directories
  * @method Router cors(array $origins) Set the Cross-Origin Resources Sharing
  * @method Router setEngine(EngineInterface $engine) Set a router engine, tells how to process request and response
  * @method Route addRoute(Route $route) Add a route to the route collection
@@ -42,21 +40,11 @@ class Router {
     const ROUTER_ROUTE_NAMES_ARRAY = 'router_route_names_array';
 
     /**
-     * Const for GET verb
-     */
-    const GET = 'GET';
-    
-    /**
-     * Const for POST verb
-     */
-    const POST = 'POST';
-
-    /**
      * Supported request methods for the application
      * 
      * @var string[]
      */
-    protected $supported_request_methods = ['GET', 'POST'];
+    protected $supported_request_methods = [];
 
     /**
      * Routes collection
@@ -94,13 +82,6 @@ class Router {
     private $engine;
 
     /**
-     * Class loader for controllers
-     * 
-     * @var ClassLoader
-     */
-    private $loader;
-
-    /**
      * Allowed origins for CORS
      * 
      * @var string[]
@@ -108,14 +89,10 @@ class Router {
     private $allowed_origins = [];
 
     /**
-     * @param Configurator $config Object with configs definition
+     * @param array $options Array with configs definition
      */
-    public function __construct(?Configurator $config = null) {
-        if(null !== $config) {
-            $config($this);
-        }
-        
-        $this->loader = new ClassLoader;
+    public function __construct(array $options = []) {
+        Configurator::configure($this, $options);
     }
 
     /**
@@ -139,22 +116,6 @@ class Router {
     public function setEngine(EngineInterface $engine): Router {
         $this->engine = $engine;
         return $this;
-    }
-
-    /**
-     * Add namespaces for controllers. The paths for namespaces can be a string or 
-     * an array of PSR-4 base directories
-     *
-     * @param array $namespace The namespace => path, namespace must have trailing '\\'
-     * @param bool $prepend Whether to prepend the directories
-     * @return void
-     * @throws InvalidArgumentException
-     */
-    public function addNamespaces(array $namespaces, bool $prepend = false): void {
-        foreach($namespaces as $namespace => $path) {
-            $this->loader->addPsr4(namespace_format($namespace), $path, $prepend);
-        }
-        $this->loader->register();
     }
 
     /**

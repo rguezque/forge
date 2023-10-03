@@ -6,7 +6,7 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Exceptions;
+namespace rguezque\Forge\Exceptions;
 
 /**
  * Throws a exception when a file isn't found or not exists.

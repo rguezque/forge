@@ -2,8 +2,8 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use Forge\Exceptions\DuplicityException;
-use Forge\Route\Services;
+use rguezque\Forge\Exceptions\DuplicityException;
+use rguezque\Forge\Route\Services;
 use PHPUnit\Framework\TestCase;
 
 class ServicesTest extends TestCase {

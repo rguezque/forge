@@ -6,10 +6,10 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
-use Forge\Interfaces\ArgumentsInterface;
-use Forge\Interfaces\BagInterface;
+use rguezque\Forge\Interfaces\ArgumentsInterface;
+use rguezque\Forge\Interfaces\BagInterface;
 
 /**
  * Represents a PHP session.

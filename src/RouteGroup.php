@@ -6,11 +6,11 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
 use Closure;
 
-use function Forge\functions\str_path;
+use function rguezque\Forge\functions\str_path;
 
 /**
  * Represents a routes group.

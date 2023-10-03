@@ -6,12 +6,12 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace Forge\Route;
+namespace rguezque\Forge\Route;
 
 use Closure;
-use Forge\Exceptions\ClassNotFoundException;
-use Forge\Exceptions\DependencyNotFoundException;
-use Forge\Exceptions\DuplicityException;
+use rguezque\Forge\Exceptions\ClassNotFoundException;
+use rguezque\Forge\Exceptions\DependencyNotFoundException;
+use rguezque\Forge\Exceptions\DuplicityException;
 use ReflectionClass;
 
 /**

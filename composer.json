@@ -16,9 +16,10 @@
     },
     "autoload": {
         "psr-4": {
-            "Forge\\Route\\": "src/",
-            "Forge\\Exceptions\\": "src/Exceptions",
-            "Forge\\Interfaces\\": "src/Interfaces"
+            "rguezque\\Forge\\Route\\": "src/",
+            "rguezque\\Forge\\Exceptions\\": "src/Exceptions",
+            "rguezque\\Forge\\Interfaces\\": "src/Interfaces",
+            "App\\": "app/"
         },
         "files": ["src/functions/functions.php"]
     },

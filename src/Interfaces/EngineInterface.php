@@ -1,12 +1,12 @@
 <?php declare(strict_types = 1);
 
-namespace Forge\Interfaces;
+namespace rguezque\Forge\Interfaces;
 
-use Forge\Route\Injector;
-use Forge\Route\Request;
-use Forge\Route\Response;
-use Forge\Route\Route;
-use Forge\Route\Services;
+use rguezque\Forge\Route\Injector;
+use rguezque\Forge\Route\Request;
+use rguezque\Forge\Route\Response;
+use rguezque\Forge\Route\Route;
+use rguezque\Forge\Route\Services;
 
 /**
  * Set the type engine for router.
