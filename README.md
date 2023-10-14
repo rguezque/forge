@@ -112,13 +112,13 @@ require __DIR__.'/vendor/autoload.php';
 
 $router = new Router;
 
-$router->addRoute(new Route('index', '/', FooController::class, 'indexAction'));
+$router->addRoute(new Route('GET', 'index', '/', FooController::class, 'indexAction'));
 
-$router->addRoute(new Route('hola_page', '/hola/{nombre}', FooController::class, 'holaAction'));
+$router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}', FooController::class, 'holaAction'));
 
 $router->addRouteGroup('/foo', function(RouteGroup $group) {
-    $group->addRoute(new Route('foo_index', '/', FooController::class, 'fooAction'));
-    $group->addRoute(new Route('foo_bar', '/bar', FooController::class, 'barAction'));
+    $group->addRoute(new Route('GET', 'foo_index', '/', FooController::class, 'fooAction'));
+    $group->addRoute(new Route('GET', 'foo_bar', '/bar', FooController::class, 'barAction'));
 });
 
 try {
@@ -155,7 +155,7 @@ use rguezque\Forge\Route\Router;
 
 $router = new Router([
     'set.basepath' => '/myapp',
-    'set.supported.request.methods' => ['PATCH'],
+    'set.supported.request.methods' => ['GET', 'POST', 'PUT'],
     'set.viewspath' => __DIR__.'/templates'
 ]);
 //$router->addRoute(...)
@@ -164,19 +164,19 @@ $router = new Router([
 
 ## Routes
 
-El método `Router::addRoute` permite agregar una ruta. Una ruta se representa por una instancia de `Route`. Esta clase recibe cuatro parámetros obligatorios y uno opcional; un nombre único para la ruta, el *string path*, el nombre del controlador y el nombre del método a ejecutar para dicha ruta. El último parámetro define el método de petición aceptado por el router, por default se presupone que todas las rutas son de tipo `GET`; la otra opción disponible es `POST` (Ver [Configurator](#configurator) si requieres definir o agregar tus propios métodos http de petición aceptados.).
+El método `Router::addRoute` permite agregar una ruta. Una ruta se representa por una instancia de `Route`. Esta clase recibe cinco parámetros obligatorios; el método de petición, un nombre único para la ruta, el *string path*, el nombre del controlador y el nombre del método a ejecutar para dicha ruta. Por default los únicos métodos aceptados por el router son `GET` y `POST` (Ver [Configurator](#configurator) si requieres definir o agregar tus propios métodos http de petición aceptados.).
 
 Por ejemplo si una ruta recibirá una petición `POST`:
 
 ```php
-$router->addRoute(new Route('save_article', '/article/save', BlogController::class, 'saveNewAction', 'POST'));
+$router->addRoute(new Route('POST', 'save_article', '/article/save', BlogController::class, 'saveNewAction'));
 ```
 
 El router también acepta dos rutas con el mismo *string path* pero diferente método de petición, nombre y acción a ejecutar.
 
 ```php
-$router->addRoute(new Route('show_articles', '/articles', BlogController::class, 'saveNewAction', 'GET'));
-$router->addRoute(new Route('save_articles', '/articles', BlogController::class, 'updateAction', 'POST'));
+$router->addRoute(new Route('GET', 'show_articles', '/articles', BlogController::class, 'saveNewAction'));
+$router->addRoute(new Route('POST', 'save_articles', '/articles', BlogController::class, 'updateAction'));
 ```
 
 Para definir rutas que solo devuelven una vista, sin tener que definir un controlador, se envía una instancia de `RouteView`. Recibe 4 parámetros, el nombre de la ruta, la definición de la ruta, la ruta a la plantilla y opcionalmente un *array* asociativo con argumentos a pasar a dicha plantilla.
@@ -202,12 +202,14 @@ Si una ruta tiene *wildcards*, se recuperan en un objeto `Bag` (Ver [The Bag Cla
 //index.php
 //...
 $router->addRoute(new Route(
+    'GET', 
     'saludo',
     '/hola/(\w+)/(\w+)',
     FooController::class,
     'holaAction'
 ));
 $router->addRoute(new Route(
+    'GET', 
     'hello_page',
     '/hello/{name}/{lastname}',
     FooController::class,
@@ -238,9 +240,9 @@ El método `Router::addRouteGroup` permite crear un grupo de rutas bajo un mismo
 
 ```php
 $router->addRouteGroup('/foo', function(RouteGrup $group) {
-    $group->addRoute(new Route('foo_index', '/', FooController::class, 'holaAction'));
-    $group->addRoute(new Route('foo_hello_page', '/hello/{nombre}', FooController::class, 'helloAction'));
-    $group->addRoute(new Route('foo_bar_page', '/bar/entry/{id}', FooController::class, 'entryAction'));
+    $group->addRoute(new Route('GET', 'foo_index', '/', FooController::class, 'holaAction'));
+    $group->addRoute(new Route('GET', 'foo_hello_page', '/hello/{nombre}', FooController::class, 'helloAction'));
+    $group->addRoute(new Route('GET', 'foo_bar_page', '/bar/entry/{id}', FooController::class, 'entryAction'));
 });
 ```
 
@@ -262,7 +264,7 @@ Los controladores reciben un parámetro `Request` y un `Response` dependiendo de
 // index.php
 //...
 $router = new Router;
-$router->addRoute(new Route('hola_page', '/hola/{nombre}/{apellido}', FooController::class, 'holaAction'));
+$router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}/{apellido}', FooController::class, 'holaAction'));
 //...
 ```
 
@@ -293,16 +295,10 @@ $args = $request->getParameters();
 $params = $args->all() // Devuelve los parámetros en un array asociativo nombre-valor
 ```
 
-Si se hace una petición `GET` en la URI solicitada (ejem. `/path/?foo=bar&lorem=ipsum`), serán accesibles en `$_GET` con el método `Request::getQueryParams`. **Nota**: Se puede utilizar la función `build_query` (Ver [Functions](#functions)) para generar una URI como la del ejemplo.
+Si se hace una petición `GET` en la URI solicitada (ejem. `/path/?foo=bar&lorem=ipsum`), serán accesibles en `$_GET` con el método `Request::getQueryParams`. 
 
 ```php
-// Lo siguiente genera: "/path/?foo=bar&lorem=ipsum"
-build_query('/path', [
-    'foo' => 'bar',
-    'lorem' => 'ipsum'
-]);
-
-// Los valores anteriores se recuperan en un objeto Bag con:
+// Los valores "foo" y "lorem" del ejemplo anterior se recuperan en un objeto Bag con:
 $params = $request->getQueryParams()
 ```
 
@@ -319,7 +315,7 @@ El motor de funcionamiento se asigna al router con el método `Router::setEngine
 ```php
 // index.php
 //...
-$router->addRoute(new Route('hola_page', '/hola/{nombre}', FooController::class, 'holaAction'));
+$router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}', FooController::class, 'holaAction'));
 $app = new ApplicationEngine();
 $router->setEngine($app);
 
@@ -350,7 +346,7 @@ public function holaAction(Request $request, Response $response): Response {
 ```php
 // index.php
 //...
-$router->addRoute(new Route('show_page', '/show/{id}', FooController::class, 'showAction'));
+$router->addRoute(new Route('GET', 'show_page', '/show/{id}', FooController::class, 'showAction'));
 $app = new JsonEngine();
 $router->setEngine($app);
 
@@ -416,6 +412,16 @@ Esta clase permite crear contenedores e inyectar dependencias. Cuenta con cinco 
 - `Injector::get`: Recupera una dependencia por su nombre. Opcionalmente puede recibir como segundo argumento un *array* con argumentos (válgase la redundancia) utilizados por la dependencia solicitada, esto es útil cuando la dependencia es una función cuyo resultado dependerá de parámetros enviados al momento de llamarla. En el caso de que la dependencia sea una clase instanciada, estos argumentos se inyectarán al final, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
 - `Injector::has`: Verifica si existe una dependencia por su nombre.
 
+También se puede usar como métodos estáticos a través del *facade* `Container`.
+
+```php
+Container::add(FooController::class);
+Container::add(PDO::class)->addParameters(/*...*/);
+
+$engine = new ApplicationEngine;
+$engine->setContainer(Container::app());
+```
+
 
 ## Services Provider
 
@@ -435,7 +441,7 @@ $engine = new ApplicationEngine();
 $engine->setServices($services)
 
 $router = new Router;
-$router->addRoute(new Route('index', '/', FooController::class, 'indexAction'));
+$router->addRoute(new Route('GET', 'index', '/', FooController::class, 'indexAction'));
 
 $router->setEngine($engine);
 $router->handleRequest(Request::fromGlobals());
@@ -454,33 +460,19 @@ public function indexAction(Request $request, Response $response, Services $serv
 
 ## Container vs Services
 
-El uso de cada uno dependerá de la preferencia del programador y según convenga. La única regla es que solo se puede implementar uno a la vez, o se elige usar un Contenedor (`EngineInterface::setContainer`) o bien el Proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobrescribirá al primero.
+Solo se puede implementar uno a la vez, o se elige usar un Contenedor (`EngineInterface::setContainer`) o bien el Proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobrescribirá al primero.
 
 ## Uri Generator
 
-Esta clase permite generar la URI de cada ruta a partir de su nombre y string de la ruta asociada. Los nombres de cada ruta son consultados desde un array asociativo en un objeto `Bag`, donde cada clave es el nombre de las rutas y su valor es el string de la ruta o `path`. Este objeto `Bag` es almacenado en la variable *global* (Ver [Globals](#the-globals-class)) `'router_route_names_array'` en el momento que se inicia el router.
+Esta clase permite hacer *reverse routing* (generar la URI de cada ruta a partir de su nombre y string de la ruta asociada).
+
+Para generar una uri se invoca el método estático `UriGenerator::reverseRouting`, que recibe el nombre de la ruta y los parámetros para la ruta si es necesario. Los parámetros se envían en un array donde cada clave debe llamarse igual que cada *wildcard* definido en la ruta.
 
 ```php
-// Como un servicio
-$services = new Services();
-$services->register('uri_generator', function() {
-    return new UriGenerator;
-});
+// Al defnir la ruta
+$router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}', MyController::class, 'holaAction'));
 
-// O desde el contenedor
-$container = new Injector;
-$container->add(UriGenerator::class);
-```
-
-Para generar una uri se invoca `UriGenerator::generate`, que recibe el nombre de la ruta y los parámetros para la ruta si es necesario. Los parámetros se envían en aun array donde cada clave debe llamarse igual que cada *wildcard* definido en la ruta.
-
-```php
-// Desde el proveedor de servicios
-$services->uri_generator->generate('hola_page', ['nombre' = 'John']);
-// Generará la URI "/hola/John"
-
-// Desde el contenedor de dependencias, inyectado a un controlador en el atributo $uri_generator
-$this->uri_generator->generate('hola_page', ['nombre' = 'John']);
+UriGenerator::reverseRouting('hola_page', ['nombre' = 'John']);
 // Generará la URI "/hola/John"
 ```
 
@@ -507,6 +499,7 @@ La clase `Request` representa una petición HTTP del lado del servidor. Los mét
 - `withParameters(array $parameters)`: Agrega a `Request` parámetros nombrados de una ruta.
 - `withParameter(string $name, $value)`: Agrega a  `Request` un parámetro nombrado.
 - `withoutParameter(string $name)`: Elimina de `Request` un parámetro de ruta especifico.
+- `buildQueryString(string $url, array $params)`: Genera una cadena de petición GET (similar a `build_query_string`, ver [functions](#functions)).
 
 ### Client Request
 
@@ -661,7 +654,7 @@ $view->addArguments([
 
 ### Extending the template
 
-Para extender un template se utiliza el método `View::extendWith`, este método recibe tres parámetros; el nombre del template que extenderá al template principal, los parámetros que se enviarán, y un alias único con el que se incluirá en el template principal.
+Para extender un template se utiliza el método `View::extendWith`, este método recibe tres parámetros; el nombre del template que extenderá al template principal, un alias único con el que se incluirá en el template principal y opcionalmente un *array* de argumentos que se envian al template que está extendiendo al principal.
 
 ```php
 $data = [
@@ -671,7 +664,7 @@ $data = [
 ];
 // Se guarda el template menu.php con el alias 'menu_lateral' y se le envian parámetros en la variable $data
 $view->template('index.php', ['title' => 'Ejemplo de vistas']);
-$view->extendWith('menu', $data, 'menu_lateral');
+$view->extendWith('menu', 'menu_lateral', $data);
 $view->render();
 ```
 
@@ -853,7 +846,7 @@ Se incluyen las siguientes:
 - `url_exists(string $url)`: Devuelve `true` si una URL existe.
 - `str_random($length = 20, $special_chars = true, bool $more_entropy = false)`: Genera una cadena de texto aleatoriamente, con una longitud definida (Por default es de 20).
 - `dd($var)`: Vuelca información de una variable en texto preformateado para una mejor lectura de su cóntenido y termina el script actual.
-- `build_query(string $url, array $params)`: Genera una petición GET codificada en la URL.
+- `build_query_string(string $url, array $params)`: Genera una cadena de petición GET.
 
 [^1]: Al final del proyecto utiliza el autoloader optimizado `composer dump-autoload -o`
 [^2]: Un wildcard es uno o varios parámetros que se definen en la ruta, pueden tener un nombre asignado entre llaves `{}` o bien, ser definidos como expresiones regulares; en ambos casos estos harán *match* con la petición que se haga a través del navegador web.
