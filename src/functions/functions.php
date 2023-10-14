@@ -253,7 +253,7 @@ function dd($var, bool $die = true): void {
  * @param array $params Params to construct query
  * @return string
  */
-function build_query(string $url, array $params): string {
+function build_query_string(string $url, array $params): string {
     if(!strpos($url, 'https://') && !strpos($url, 'http://') && !strpos($url, 'www')) {
         $url = rtrim($url, '/\\').'/';
     }

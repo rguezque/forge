@@ -108,11 +108,11 @@ class View {
      * Add a view to buffer to extend a main view
      * 
      * @param string $file View file name
-     * @param array $variables View parameters
      * @param string $extend_name View name
+     * @param array $variables View parameters
      * @return View
      */
-    public function extendWith(string $file, array $variables = [], string $extend_name): View {
+    public function extendWith(string $file, string $extend_name, array $variables = []): View {
         $file = $this->path . $file;
         $this->addArgument($extend_name, $this->getRender($file, $variables));
 

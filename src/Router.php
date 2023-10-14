@@ -19,7 +19,6 @@ use function rguezque\Forge\functions\add_trailing_slash;
 use function rguezque\Forge\functions\generator;
 use function rguezque\Forge\functions\remove_trailing_slash;
 use function rguezque\Forge\functions\str_ends_with;
-use function rguezque\Forge\functions\str_path;
 
 /**
  * Router
@@ -177,21 +176,12 @@ class Router {
     }
 
     /**
-     * Retrieve the array with route names in a Bag object
-     * 
-     * @return Bag
-     */
-    private function getRouteNames(): Bag {
-        return new Bag($this->route_names);
-    }
-
-    /**
      * Save all the route names in a global var
      * 
      * @return void
      */
-    private function saveRouteNamesToGlobals(): void {
-        Globals::set(Router::ROUTER_ROUTE_NAMES_ARRAY, $this->getRouteNames());
+    private function saveRouteNames(): void {
+        UriGenerator::setRouteNames($this->route_names);
     }
 
     /**
@@ -207,8 +197,8 @@ class Router {
 
         if(!$invoke_once) {
             $this->resolveCors($request);
-            $this->saveRouteNamesToGlobals();
             $this->resolveRouteGroups();
+            $this->saveRouteNames();
             $invoke_once = true;
 
             return $this->resolve($request);
@@ -283,7 +273,7 @@ class Router {
     private function resolveRouteGroups() {
         if([] !== $this->routes_group) {
             foreach($this->routes_group as $group) {
-                $group();
+                call_user_func($group);
             }
         }
     }

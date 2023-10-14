@@ -8,15 +8,15 @@
 
 namespace rguezque\Forge\Route;
 
-use rguezque\Forge\Exceptions\NotFoundException;
 use rguezque\Forge\Interfaces\EngineInterface;
-use ReflectionClass;
 use UnexpectedValueException;
 
 /**
  * Set the default engine for router.
  */
 class ApplicationEngine implements EngineInterface {
+
+    use ClassTrait;
 
     /**
      * Dependencies container or Services provider
@@ -46,30 +46,19 @@ class ApplicationEngine implements EngineInterface {
         // Controller full classname
         $controller = $route->getController();
 
-        // Check for dependencies container
-        if(isset($this->container) && $this->container instanceof Injector) {
-            if(!$this->container->has($controller)) {
-                throw new NotFoundException(sprintf('Don\'t exists the dependency "%s" in the container.', $controller));
-            }
-            // Get the instance from container
-            $class = $this->container->get($controller);
-        } else {
-            if(!class_exists($controller)) {
-                throw new NotFoundException(sprintf('Don\'t exists the class "%s".', $controller));
-            }
-            // Construct the controller instance
-            $class = (new ReflectionClass($controller))->newInstance();
-        }
+        $class = $this->retrieveControllerClass($controller);
         
         // Method of the controller
         $action = $route->getAction();
 
+        $arguments = [$request, new Response()];
+        
         // Check for services and exec the callback for the route
         if(isset($this->container) && $this->container instanceof Services) {
-            $result = call_user_func([$class, $action], $request, new Response(), $this->container);
-        } else {
-            $result = call_user_func([$class, $action], $request, new Response());
+            array_push($arguments, $this->container);
         }
+        // Exec the callback for the route
+        $result = call_user_func_array([$class, $action], array_values($arguments));
         
         if(!$result instanceof Response) {
             ob_end_clean();

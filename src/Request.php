@@ -29,6 +29,7 @@ namespace rguezque\Forge\Route;
  * @method Request withParameters(array $parameters) Add to Request object named parameter from route
  * @method Request withParameter(string $name, $value) Add to Request object a parameter by name
  * @method Request withoutParameter(string $name) Remove from Request object a parameter by name
+ * @method string buildQueryString(string $url, array $params) Generate URL-encoded query string
  */
 class Request {
 
@@ -296,6 +297,19 @@ class Request {
         return $this;
     }
 
-}
+    /**
+     * Generate URL-encoded query string
+     * 
+     * @param string $url URI to construct query
+     * @param array $params Params to construct query
+     * @return string
+     */
+    public static function buildQueryString(string $url, array $params): string {
+        if(!strpos($url, 'https://') && !strpos($url, 'http://') && !strpos($url, 'www')) {
+            $url = rtrim($url, '/\\').'/';
+        }
 
-?>
+        return $url.'?'.http_build_query($params);
+    }
+
+}

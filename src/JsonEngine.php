@@ -8,9 +8,7 @@
 
 namespace rguezque\Forge\Route;
 
-use rguezque\Forge\Exceptions\NotFoundException;
 use rguezque\Forge\Interfaces\EngineInterface;
-use ReflectionClass;
 use UnexpectedValueException;
 
 use function rguezque\Forge\functions\is_assoc_array;
@@ -19,6 +17,8 @@ use function rguezque\Forge\functions\is_assoc_array;
  * Set the engine for allow router return json responses
  */
 class JsonEngine implements EngineInterface {
+
+    use ClassTrait;
 
     /**
      * Dependencies container or Services provider
@@ -47,29 +47,19 @@ class JsonEngine implements EngineInterface {
     public function resolve(Route $route, Request $request): Response {
         $controller = $route->getController();
 
-        if(isset($this->container) && $this->container instanceof Injector) {
-            if(!$this->container->has($controller)) {
-                throw new NotFoundException(sprintf('Don\'t exists the dependency "%s" in the container.', $controller));
-            }
-            // Get the instance from container
-            $class = $this->container->get($controller);
-        } else {
-            if(!class_exists($controller)) {
-                throw new NotFoundException(sprintf('Don\'t exists the class "%s".', $controller));
-            }
-            // Construct the controller instance
-            $class = (new ReflectionClass($controller))->newInstance();
-        }
+        $class = $this->retrieveControllerClass($controller);
 
         // Method of the controller
         $action = $route->getAction();
         
-        // Exec the callback for the route
+        $arguments = [$request];
+        
+        // Check for services and exec the callback for the route
         if(isset($this->container) && $this->container instanceof Services) {
-            $result = call_user_func([$class, $action], $request, $this->container);
-        } else {
-            $result = call_user_func([$class, $action], $request);
+            array_push($arguments, $this->container);
         }
+        // Exec the callback for the route
+        $result = call_user_func_array([$class, $action], array_values($arguments));
         
         if(!is_array($result)) {
             $buffer = ob_get_clean();

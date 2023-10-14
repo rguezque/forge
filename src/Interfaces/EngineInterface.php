@@ -39,6 +39,7 @@ interface EngineInterface {
      * @param Route $route The route object to resolve
      * @param Request $request HTTP request object 
      * @return Response
+     * @throws DependencyNotFoundException
      * @throws NotFoundException
      * @throws UnexpectedValueException
      */

@@ -37,7 +37,7 @@ class Configurator extends Router {
      * @param array $options Router options
      * @throws InvalidArgumentException
      */
-    public function __construct(array $options = []) {
+    private function __construct(array $options = []) {
         if([] !== $options) {
             $options = array_change_key_case($options, CASE_LOWER);
             $options = array_map('trim', $options);
