@@ -25,7 +25,7 @@ class UriGenerator {
      * 
      * @var Bag
      */
-    private $route_names;
+    private static $route_names;
 
     /**
      * Receive an array with route names collection and save/merge into a Bag object
