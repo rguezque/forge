@@ -15,7 +15,6 @@ use rguezque\Forge\Exceptions\RouteNotFoundException;
 use rguezque\Forge\Exceptions\UnsupportedRequestMethodException;
 use rguezque\Forge\Interfaces\EngineInterface;
 
-use function rguezque\Forge\functions\add_trailing_slash;
 use function rguezque\Forge\functions\generator;
 use function rguezque\Forge\functions\remove_trailing_slash;
 use function rguezque\Forge\functions\str_ends_with;
@@ -27,6 +26,7 @@ use function rguezque\Forge\functions\str_ends_with;
  * @method Router setEngine(EngineInterface $engine) Set a router engine, tells how to process request and response
  * @method Route addRoute(Route $route) Add a route to the route collection
  * @method RouteGroup addRouteGroup(string $namespace, Route ...$routes) Add routes group with a common namespace
+ * @method Bag getRouteNames() Return all the route names array into a Bag object
  * @method Response handleRequest(Request $request) Handle the request URI and routing
  */
 class Router {
@@ -176,12 +176,12 @@ class Router {
     }
 
     /**
-     * Save all the route names in a global var
+     * Return all the route names array into a Bag object
      * 
-     * @return void
+     * @return Bag
      */
-    private function saveRouteNames(): void {
-        UriGenerator::setRouteNames($this->route_names);
+    public function getRouteNames(): Bag {
+        return new Bag($this->route_names);
     }
 
     /**
@@ -198,7 +198,6 @@ class Router {
         if(!$invoke_once) {
             $this->resolveCors($request);
             $this->resolveRouteGroups();
-            $this->saveRouteNames();
             $invoke_once = true;
 
             return $this->resolve($request);
