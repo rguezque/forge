@@ -13,6 +13,8 @@ trait ClassTrait {
      * 
      * @param string $controller Controller name
      * @return object
+     * @throws DependencyNotFoundException
+     * @throws NotFoundException
      */
     private function retrieveControllerClass($controller): object {
         // Check for dependencies container

@@ -55,7 +55,7 @@ class DbConnection {
                     // You should enable error reporting for mysqli before attempting to make a connection
                     mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-                    $mysqli = new mysqli($params['host'] ?? '127.0.0.1', $params['user'], $params['pass'] ?? '', $params['dbname'], intval($params['port']) ?? 3306, $params['socket'] ?? null);
+                    $mysqli = new mysqli($params['host'] ?? '127.0.0.1', $params['user'], $params['pass'] ?? '', $params['dbname'], intval($params['port'] ?? 3306), $params['socket'] ?? null);
 
                     if($mysqli->connect_errno) {
                         throw new mysqli_sql_exception(sprintf('Failed to connect to MySQL with mysqli: %s', $mysqli->connect_error));

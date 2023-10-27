@@ -234,7 +234,7 @@ class ClientRequest {
      * @return array
      */
     public function toArray(): array {
-        return json_decode($this->result, true);
+        return json_decode($this->result, true) ?? [];
     }
 
     /**
