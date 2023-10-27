@@ -460,20 +460,29 @@ public function indexAction(Request $request, Response $response, Services $serv
 
 ## Container vs Services
 
-Solo se puede implementar uno a la vez, o se elige usar un Contenedor (`EngineInterface::setContainer`) o bien el Proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobrescribirá al primero.
+Solo se puede implementar uno a la vez, o se elige usar un contenedor de dependencias (`EngineInterface::setContainer`) o bien el proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobrescribirá al primero.
 
-## Uri Generator
+## URL Generator
 
-Esta clase permite hacer *reverse routing* (generar la URI de cada ruta a partir de su nombre y string de la ruta asociada).
+Esta clase permite hacer *reverse routing* (generar la URL de cada ruta a partir de su nombre y string de la ruta asociada).
 
-Para generar una uri se invoca el método estático `UriGenerator::reverseRouting`, que recibe el nombre de la ruta y los parámetros para la ruta si es necesario. Los parámetros se envían en un array donde cada clave debe llamarse igual que cada *wildcard* definido en la ruta.
+Al crear una instancia de `UrlGenerator` se envía como argumento los nombres y URL de las rutas proporcionado por `Router::getRouteNames`.
+
+```php
+$router = new Router;
+$router->addRoute(/*...*/);
+// ...
+$generator = new UrlGenerator($router->getRouteNames());
+```
+
+Para generar una URL se invoca el método estático `UrlGenerator::reverseRouting`, que recibe el nombre de la ruta y los parámetros para la ruta si es necesario. Los parámetros se envían en un array donde cada clave debe llamarse igual que cada *wildcard* definido en la ruta.
 
 ```php
 // Al defnir la ruta
 $router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}', MyController::class, 'holaAction'));
 
-UriGenerator::reverseRouting('hola_page', ['nombre' = 'John']);
-// Generará la URI "/hola/John"
+UrlGenerator::reverseRouting('hola_page', ['nombre' = 'John']);
+// Generará la URL "/hola/John"
 ```
 
 ## HTTP
