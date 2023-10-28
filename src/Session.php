@@ -6,7 +6,7 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace rguezque\Forge\Route;
+namespace rguezque\Forge\Router;
 
 use rguezque\Forge\Interfaces\ArgumentsInterface;
 use rguezque\Forge\Interfaces\BagInterface;

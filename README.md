@@ -1,4 +1,4 @@
-# rguezque\Route
+# Forge
 
 Un liviano y básico router php para proyectos rápidos y pequeños.
 
@@ -100,7 +100,7 @@ El método `Router::handleRequest` procesa el Request, hace el enrutamiento y de
 ```php
 use Application\Http\FooController;
 use rguezque\Forge\Exceptions\RouteNotFoundException;
-use rguezque\Forge\Route\{
+use rguezque\Forge\Router\{
     Emitter,
     Request,
     Response,
@@ -151,7 +151,7 @@ El router puede recibir como parámetros un array asociativo con las opciones di
 
 
 ```php
-use rguezque\Forge\Route\Router;
+use rguezque\Forge\Router\Router;
 
 $router = new Router([
     'set.basepath' => '/myapp',
@@ -272,8 +272,8 @@ $router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}/{apellido}', Foo
 // app/Http/FooController.php
 namespace App\Http;
 
-use rguezque\Forge\Route\Request;
-use rguezque\Forge\Route\Response;
+use rguezque\Forge\Router\Request;
+use rguezque\Forge\Router\Response;
 
 class FooController {
 
@@ -515,7 +515,7 @@ La clase `Request` representa una petición HTTP del lado del servidor. Los mét
 La clase `ClientRequest` representa peticiones HTTP desde el lado del cliente.
 
 ```php
-use rguezque\Forge\Route\ClientRequest;
+use rguezque\Forge\Router\ClientRequest;
 
 // Si se omite el segundo parámetro se asume que será una petición GET
 $request = new ClientRequest('https://jsonplaceholder.typicode.com/posts', 'POST');
@@ -577,7 +577,7 @@ return new RedirectResponse('/hola/John/Doe');
 Esta clase solo contiene el método estático `Emitter::emit`, y recibe como parámetro un objeto `Response`. Se encarga de "emitir" el response.
 
 ```php
-use rguezque\Forge\Route\{Emitter, Router, Reques};
+use rguezque\Forge\Router\{Emitter, Router, Reques};
 
 //...
 $response = $router->handleRequest(Request::fromGlobals());
@@ -619,7 +619,7 @@ Las vistas son el medio por el cual el router devuelve y renderiza un objeto `Re
 **Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configurator](#configurator)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
 
 ```php
-use rguezque\Forge\Route\View;
+use rguezque\Forge\Router\View;
 
 $view = new View(
     __DIR__.'/mis_plantillas', // Directorio donde se alojan los templates
@@ -717,7 +717,7 @@ El método `View::render` se invoca siempre al final y devuelve lo contenido en 
 La clase `DbConnection` proporciona el medio para crear una conexión *singleton* con MySQL a través del driver `PDO` o la clase `mysqli`. El método estático `DbConnection::getConnection` recibe los parámetros de conexión y devuelve un objeto con la conexión creada dependiendo del parámetro `driver` donde se define si se utilizara por default MySQL con `PDO` o con `mysqli`.
 
 ```php
-use rguezque\Forge\Route\DbConnection;
+use rguezque\Forge\Router\DbConnection;
 
 $db = DbConnection::getConnection([
     // 'driver' => 'mysqli',
@@ -736,7 +736,7 @@ $db = DbConnection::getConnection([
 Otra alternativa es usar una *database URL* como parámetro de conexión, a través del método estático `DbConnection::dsnParser`; este recibe una URL y la procesa para ser enviada a `DbConnection::getConnection` de la siguiente forma:
 
 ```php
-use rguezque\Forge\Route\DbConnection;
+use rguezque\Forge\Router\DbConnection;
 
 // Con mysqli
 // 'mysqli://root:mypassword@127.0.0.1/mydatabase?charset=utf8'
@@ -750,7 +750,7 @@ $db = DbConnection::getConnection($connection_params);
 El método estático `DbConnection::autoConnect` realiza una conexión a MySQL tomando automáticamente los parámetros definidos en un archivo `.env`. 
 
 ```php
-use rguezque\Forge\Route\DbConnection;
+use rguezque\Forge\Router\DbConnection;
 
 $db = DbConnection::autoConnect();
 ```
@@ -774,7 +774,7 @@ DB_CHARSET="utf8"
 Esta clase se encarga de configurar el manejador de errores tanto en modo <u>*production*</u> como <u>*development*</u>, así como la zona horaria para el manejo correcto de fechas en PHP. Recibe un array asociativo con tres parámetros: `log_path`, `environment` y `timezone`; no importa el orden en que se declaren. Debe declararse al inicio, antes que todo en el controlador frontal. Las configuraciones se aplican con solo crear una instancia de `Handler` o con el método estático `Handler::configure` que de igual forma recibe los parámetros ya mencionados.
 
 ```php
-use rguezque\Forge\Route\Handler;
+use rguezque\Forge\Router\Handler;
 
 new Handler([
     'log_path' => __DIR__.'/var/logs',

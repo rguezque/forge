@@ -3,7 +3,7 @@
 require __DIR__.'/../vendor/autoload.php';
 
 use rguezque\Forge\Exceptions\DuplicityException;
-use rguezque\Forge\Route\Services;
+use rguezque\Forge\Router\Services;
 use PHPUnit\Framework\TestCase;
 
 class ServicesTest extends TestCase {

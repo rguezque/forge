@@ -6,7 +6,7 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace rguezque\Forge\Route;
+namespace rguezque\Forge\Router;
 
 use rguezque\Forge\Exceptions\FileNotFoundException;
 use rguezque\Forge\Exceptions\MissingArgumentException;

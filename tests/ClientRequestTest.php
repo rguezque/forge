@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-use rguezque\Forge\Route\ClientRequest;
+use rguezque\Forge\Router\ClientRequest;
 use PHPUnit\Framework\TestCase;
 
 class ClientRequestTest extends TestCase {

@@ -1,27 +1,27 @@
 {
-    "name": "rguezque/route",
+    "name": "rguezque/forge",
     "description": "A lightweight PHP router.",
-    "keywords": ["php", "routing", "router", "route", "api"],
+    "keywords": ["router", "routing", "routing-engine", "route", "api", "mvc", "mvc-pattern","php", "microframework"],
     "license": "MIT",
     "homepage": "https://github.com/rguezque/route",
     "authors": [
         {
             "name": "Luis Rodriguez",
             "email": "rguezque@gmail.com",
-            "role": "Original Developer"
+            "role": "Original Developer",
+            "homepage": "https://github.com/rguezque"
         }
     ],
-    "require": {
-        "php": ">= 7.2.19"
-    },
     "autoload": {
         "psr-4": {
-            "rguezque\\Forge\\Route\\": "src/",
+            "rguezque\\Forge\\Router\\": "src/",
             "rguezque\\Forge\\Exceptions\\": "src/Exceptions",
-            "rguezque\\Forge\\Interfaces\\": "src/Interfaces",
-            "App\\": "app/"
+            "rguezque\\Forge\\Interfaces\\": "src/Interfaces"
         },
         "files": ["src/functions/functions.php"]
+    },
+    "require": {
+        "php": ">= 7.2.19"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.5"

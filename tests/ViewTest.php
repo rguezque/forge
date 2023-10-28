@@ -2,7 +2,7 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use rguezque\Forge\Route\View;
+use rguezque\Forge\Router\View;
 use PHPUnit\Framework\TestCase;
 
 class ViewTest extends TestCase {

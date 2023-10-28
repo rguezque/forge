@@ -2,11 +2,11 @@
 
 namespace rguezque\Forge\Interfaces;
 
-use rguezque\Forge\Route\Injector;
-use rguezque\Forge\Route\Request;
-use rguezque\Forge\Route\Response;
-use rguezque\Forge\Route\Route;
-use rguezque\Forge\Route\Services;
+use rguezque\Forge\Router\Injector;
+use rguezque\Forge\Router\Request;
+use rguezque\Forge\Router\Response;
+use rguezque\Forge\Router\Route;
+use rguezque\Forge\Router\Services;
 
 /**
  * Set the type engine for router.

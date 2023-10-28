@@ -2,7 +2,7 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use rguezque\Forge\Route\Bag;
+use rguezque\Forge\Router\Bag;
 use PHPUnit\Framework\TestCase;
 
 class BagTest extends TestCase {

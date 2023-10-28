@@ -2,7 +2,7 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use rguezque\Forge\Route\Arguments;
+use rguezque\Forge\Router\Arguments;
 use PHPUnit\Framework\TestCase;
 
 class ArgumentsTest extends TestCase {

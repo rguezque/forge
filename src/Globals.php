@@ -6,7 +6,7 @@
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
 
-namespace rguezque\Forge\Route;
+namespace rguezque\Forge\Router;
 
 /**
  * Represent $GLOBALS router parameters

@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace rguezque\Forge\Route;
+namespace rguezque\Forge\Router;
 
 use ReflectionClass;
 use rguezque\Forge\Exceptions\DependencyNotFoundException;
