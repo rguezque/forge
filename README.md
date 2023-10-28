@@ -51,10 +51,6 @@ En **Apache** edita el archivo `.htaccess`  en la raíz del proyecto:
 
 ```htaccess
 <IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
-
     RewriteEngine On
 
     # Handle Authorization Header
