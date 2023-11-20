@@ -10,6 +10,7 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
   - [Wildcards](#wildcards)
 - [Routes Group](#routes-group)
 - [Controllers](#controllers)
+- [Using attributes to define routes](#using-attributes-to-define-routes)
 - [Add namespaces](#add-namespaces)
 - [Engine](#engine)
   - [Application Engine](#application-engine)
@@ -316,7 +317,7 @@ require __DIR__.'/vendor/autoload.php';
 
 $app = new Router;
 
-// Aqui se cargan los conntroladores
+// Aqui se cargan los controladores
 $app->addControllersWithAttributes([
     MainController::class
 ]);
