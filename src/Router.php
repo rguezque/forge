@@ -9,11 +9,15 @@
 namespace rguezque\Forge\Router;
 
 use Closure;
+use ReflectionAttribute;
+use ReflectionClass;
 use rguezque\Forge\Exceptions\BadNameException;
 use rguezque\Forge\Exceptions\DuplicityException;
 use rguezque\Forge\Exceptions\RouteNotFoundException;
 use rguezque\Forge\Exceptions\UnsupportedRequestMethodException;
 use rguezque\Forge\Interfaces\EngineInterface;
+use rguezque\Forge\Router\Attributes\GroupAttribute;
+use rguezque\Forge\Router\Attributes\RouteAttribute;
 
 use function rguezque\Forge\functions\generator;
 use function rguezque\Forge\functions\remove_trailing_slash;
@@ -92,6 +96,58 @@ class Router {
      */
     public function __construct(array $options = []) {
         Configurator::configure($this, $options);
+    }
+
+    /**
+     * Allows you to load controllers with attributes that are used to define 
+     * routes and routes groups.
+     * 
+     * Group prefix are defined in the attributes of each class. 
+     * The routes are defined in the attributes of each method of the class.
+     * 
+     * @param array $controllers Controller classes with attributes
+     * @return Router
+     */
+    public function addControllersWithAttributes(array $controllers): Router {
+        foreach($controllers as $controller) {
+            $reflection_controller = new ReflectionClass($controller);
+
+
+            $controller_attrs = $reflection_controller->getAttributes(GroupAttribute::class);
+
+            if([] !== $controller_attrs) {
+                foreach($controller_attrs as $controller_attr) {
+                    $group = $controller_attr->newInstance();
+                    $prefix = $group->prefix;
+                    
+                    $this->addRoutesFromAttributes($controller, $reflection_controller->getMethods(), $prefix);
+                }
+            } else {
+                $this->addRoutesFromAttributes($controller, $reflection_controller->getMethods());
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Generate and add routes using methods attributes
+     * 
+     * @param string $controller Controller name
+     * @param ReflectionMethod[] $methods Array of methods of controller
+     * @param string $prefix Group prefix
+     * @return void
+     */
+    private function addRoutesFromAttributes(string $controller, array $methods, string $prefix = ''): void {
+        foreach($methods as $method) {
+            $attributes = $method->getAttributes(RouteAttribute::class);
+
+            foreach($attributes as $attribute) {
+                $route = $attribute->newInstance();
+
+                $this->addRoute(new Route($route->method, $route->name, $prefix.$route->path, $controller, $method->getName()));
+            }
+        }
     }
 
     /**

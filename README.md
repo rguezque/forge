@@ -298,6 +298,100 @@ Si se hace una petición `GET` en la URI solicitada (ejem. `/path/?foo=bar&lorem
 $params = $request->getQueryParams()
 ```
 
+## Using attributes to define routes
+
+Esta forma utiliza los atributos de las clases y los métodos para generar y agregar rutas y grupos de rutas. El método `Router::addControllersWithAttributes` recibe como argumento un _array_ de nombres de controladores previamente con atributos definidos, en caso contrario no registrará ninguna ruta.
+
+```php
+use App\MainController;
+use rguezque\Forge\Exceptions\RouteNotFoundException;
+use rguezque\Forge\Exceptions\UnsupportedRequestMethodException;
+use rguezque\Forge\Router\Emitter;
+use rguezque\Forge\Router\Injector;
+use rguezque\Forge\Router\Request;
+use rguezque\Forge\Router\Router;
+use rguezque\Forge\Router\Response;
+
+require __DIR__.'/vendor/autoload.php';
+
+$app = new Router;
+
+// Aqui se cargan los conntroladores
+$app->addControllersWithAttributes([
+    MainController::class
+]);
+
+$container = new Injector;
+$container->add(MainController::class);
+
+$engine->setContainer($container);
+$app->setEngine($engine);
+
+try {
+    $response = $app->handleRequest(Request::fromGlobals());
+} catch (RouteNotFoundException $e) {
+    $response = new Response($e->getMessage(), 404);
+} catch (UnsupportedRequestMethodException $e) {
+    $response = new Response($e->getMessage(), 405);
+}
+
+Emitter::emit($response);
+```
+
+Estos atributos deben tener una definición específica. Para el caso de las rutas, el controlador debería verse así:
+
+```php
+namespace App;
+
+use rguezque\Forge\Router\Request;
+use rguezque\Forge\Router\Response;
+// Se debe incluir la clase RouteAttribute pues de aqui se recuperan 
+// los parámetros para crear la ruta
+use rguezque\Forge\Router\Attributes\RouteAttribute;
+
+class MainController {
+
+    #[RouteAttribute('GET', 'index_page', '/')]
+    public function indexAction(Request $request, Response $response) {
+        return $response->send('Hola mundo!');
+    }
+    
+    #[RouteAttribute('GET', 'about_page', '/about')]
+    public function indexAction(Request $request, Response $response) {
+        return $response->send('Hola mundo!');
+    }
+}
+```
+
+Por cada método se define uno o más atributos `RouteAttribute` que debe contener los valores: método de petición de la ruta, nombre de la ruta y el _string path_ de la ruta. Para el caso de los grupos de rutas, se debe definir un atributo `GroupAttribute` para la clase, el cual recibe como valor el prefijo del grupo de rutas:
+
+```php
+namespace App;
+
+use rguezque\Forge\Router\Request;
+use rguezque\Forge\Router\Response;
+// Se debe incluir la clase GroupAttribute y RouteAttribute pues de 
+// aqui se recuperan los parámetros para crear el grupo de rutas
+use rguezque\Forge\Router\Attributes\GroupAttribute;
+use rguezque\Forge\Router\Attributes\RouteAttribute;
+
+#[GroupAttribute('/foo')]
+class MainController {
+
+    #[RouteAttribute('GET', 'index_page', '/')]
+    public function indexAction(Request $request, Response $response) {
+        return $response->send('Hola mundo!');
+    }
+    
+    #[RouteAttribute('GET', 'about_page', '/about')]
+    public function indexAction(Request $request, Response $response) {
+        return $response->send('Hola mundo!');
+    }
+}
+```
+
+De esta forma tenemos un grupo con un prefijo que heredarán cada una de las rutas que se generen a partir de cada método que tenga atributos de ruta definidos, en caso contrario serán ignorados estos métodos; de la misma forma las clases que no tengan definido atributos de grupo solo se crearán las rutas de forma normal por cada método.
+
 ## Engine
 
 El router tiene dos motores de funcionamiento, `ApplicationEngine` (usado por default) y `JsonEngine` , este último permite usar el router como una API. En el primer caso los métodos de cada controlador reciben dos parámetros, `Request` y `Response` y cada método debe devolver un `Response` de lo contrario lanzará un `UnexpectedValueException`. Si una ruta contiene *wildcards* estos son enviados en el `Request` y recuperados con `Request::getParameters`, mientras que el parámetro`Response` proporciona los métodos para generar una respuesta.

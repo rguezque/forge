@@ -93,8 +93,8 @@ class Route {
         string $controller, 
         string $action
     ) {
-        $this->request_method = $request_method;
-        $this->name           = $name;
+        $this->request_method = strtoupper(trim($request_method));
+        $this->name           = trim($name);
         $this->path           = str_path($path);
         $this->controller     = $controller;
         $this->action         = $action;
