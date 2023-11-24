@@ -354,12 +354,12 @@ class MainController {
 
     #[RouteAttribute('GET', 'index_page', '/')]
     public function indexAction(Request $request, Response $response) {
-        return $response->send('Hola mundo!');
+        return $response->withContent('Hola mundo!');
     }
     
     #[RouteAttribute('GET', 'about_page', '/about')]
     public function indexAction(Request $request, Response $response) {
-        return $response->send('Hola mundo!');
+        return $response->withContent('Hola mundo!');
     }
 }
 ```
@@ -381,12 +381,12 @@ class MainController {
 
     #[RouteAttribute('GET', 'index_page', '/')]
     public function indexAction(Request $request, Response $response) {
-        return $response->send('Hola mundo!');
+        return $response->withContent('Hola mundo!');
     }
     
     #[RouteAttribute('GET', 'about_page', '/about')]
     public function indexAction(Request $request, Response $response) {
-        return $response->send('Hola mundo!');
+        return $response->withContent('Hola mundo!');
     }
 }
 ```
