@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 /**
  * @author    Luis Arturo Rodríguez
- * @copyright Copyright (c) 2022 Luis Arturo Rodríguez <rguezque@gmail.com>
+ * @copyright Copyright (c) 2022 LAllows you to load controllers with attributes that are used to define uis Arturo Rodríguez <rguezque@gmail.com>
  * @link      https://github.com/rguezque
  * @license   https://opensource.org/licenses/MIT    MIT License
  */
@@ -9,7 +9,6 @@
 namespace rguezque\Forge\Router;
 
 use Closure;
-use ReflectionAttribute;
 use ReflectionClass;
 use rguezque\Forge\Exceptions\BadNameException;
 use rguezque\Forge\Exceptions\DuplicityException;
@@ -26,6 +25,7 @@ use function rguezque\Forge\functions\str_ends_with;
 /**
  * Router
  * 
+ * @method Router addControllersWithAttributes(array $controllers) Allows you to load controllers with attributes that are used to define routes and routes groups
  * @method Router cors(array $origins) Set the Cross-Origin Resources Sharing
  * @method Router setEngine(EngineInterface $engine) Set a router engine, tells how to process request and response
  * @method Route addRoute(Route $route) Add a route to the route collection

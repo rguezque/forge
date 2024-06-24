@@ -6,6 +6,7 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
 
 - [Configure](#configure)
 - [Routing](#routing)
+- [Configure router](#configure-router)
 - [Routes](#routes)
   - [Wildcards](#wildcards)
 - [Routes Group](#routes-group)
@@ -36,11 +37,9 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
   - [Arguments](#arguments)
   - [Extending the template](#extending-the-template)
   - [Render](#render)
-- [Configurator](#configurator)
 - [DB Connection](#db-connection)
   - [Connecting using an URL](#connecting-using-an-url)
   - [Auto connect](#auto-connect)
-
 - [Handler](#handler)
 - [Users](#users)
 - [Functions](#functions)
