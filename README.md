@@ -175,7 +175,7 @@ $router->addRoute(new Route('GET', 'show_articles', '/articles', BlogController:
 $router->addRoute(new Route('POST', 'save_articles', '/articles', BlogController::class, 'updateAction'));
 ```
 
-Para definir rutas que solo devuelven una vista, sin tener que definir un controlador, se envía una instancia de `RouteView`. Recibe 4 parámetros, el nombre de la ruta, la definición de la ruta, la ruta a la plantilla y opcionalmente un *array* asociativo con argumentos a pasar a dicha plantilla.
+Para definir rutas que solo devuelven una vista, sin tener que definir un controlador, se envía una instancia de `RouteView`. Recibe 4 parámetros, el nombre de la ruta, la definición de la ruta, la ruta a la plantilla y opcionalmente un *array* asociativo con argumentos a pasar a dicha plantilla. Todos los `RouteView` son te tipo `GET` por default.
 
 ```php
 $router->addRoute(new RouteView('main_home', '/', __DIR__.'/views/homepage.php'));
@@ -188,11 +188,11 @@ $router->addRouteGroup('/foo', function(RouteGroup $group) {
 });
 ```
 
-**Nota:** Si previamente se ha definido el directorio de *templates* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configurator](#configurator)).
+**Nota:** Si previamente se ha definido el directorio de *templates* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configurator](#configurator)). Si hay un parámetro nombrado en la definición de ruta de `RouteView` se manda como parámetros al template.
 
-### Wildcards[^2]
+### Wildcards
 
-Si una ruta tiene *wildcards*, se recuperan en un objeto `Bag` (Ver [The Bag Class](#the-bag-class)) a través del método `Request::getParameters` y pueden ser tomados a través de `Bag::get` usando como clave el parámetro nombrado con que fueron definidos en la ruta. Si la ruta tiene *wildcards* como expresiones regulares (RegEx) se recuperan con la clave `@matches` que devuelve un array lineal con los valores enumerados en orden de *match*.
+Si una ruta tiene *wildcards*[^2] nombrados, se recuperan en un objeto `Bag` (Ver [The Bag Class](#the-bag-class)) a través del método `Request::getParameters` y pueden ser tomados a través de `Bag::get` usando como clave el parámetro nombrado con que fueron definidos en la ruta. Si la ruta tiene *wildcards* en forma de expresiones regulares (RegEx) se recuperan con `Bag::all` que devuelve un array lineal con los valores enumerados en orden de *match* (emparejamiento, coincidencia).
 
 ```php
 //index.php
@@ -216,8 +216,7 @@ $router->addRoute(new Route(
 // FooController.php
 //...
 public function holaAction(Request $request, Response $response): Response {
-	$args = $request->getParameters();
-	list($nombre, $apellido) = $args->get('@matches')
+	list($nombre, $apellido) = $request->getParameters()->all();
     return $response->withContent(sprintf('Hola %s %s', $nombre, $apellido));
 }
 
@@ -229,6 +228,20 @@ public function helloAction(Request $request, Response $response): Response {
 }
 //...
 ```
+
+**Nota:** No se recomienda definir parámetros nombrados y en forma de expresiones regulares en la misma ruta. De ser así, aunque se devuelven todas las coincidencias no será posible acceder por nombre con `Bag::get` a las que hayan sido definidas como _regex_ y tendrás que acceder a cada una a través de su posición numérica en el array devuelto por `Bag::all`; por ejemplo la ruta `/{nombre}/(\w)/{edad}` devolverá parámetros con esta estructura:
+
+```php
+Array ( 
+    [name] => John 
+    [0] => John 
+    [1] => Doe 
+    [edad] => 33 
+    [2] => 33 
+)
+```
+
+Para las rutas que solo devuelven una vista (Ver [Routes](#routes)) es obligatorio que si dicha ruta contiene parámetros deben ser parámetros nombrados, pues se agregan como parámetros al *template* de la vista.
 
 ## Routes group
 

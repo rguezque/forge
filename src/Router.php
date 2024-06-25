@@ -295,9 +295,6 @@ class Router {
                 // $arguments[0] will always be equal to $request, so we just shift it off
                 array_shift($arguments);
                 
-                // Filter the regex matches and push to lineal array into key '_matches'
-                $this->filterArguments($arguments);
-
                 // Check for route with only view without controller
                 if($route instanceof RouteView) {
                     $route->addArguments($arguments);
@@ -356,12 +353,13 @@ class Router {
     }
 
     /**
-     * Filter an arguments array. Regex matches are pushed into a lineal array with key '_matches'.
+     * Filter an arguments array. Regex matches are pushed into a lineal array.
      * 
+     * @deprecated
      * @param array $params Array to process
-     * @return void
+     * @return array
      */
-    private function filterArguments(array &$params): void {
+    private function filterArguments(array $params): array {
         $matches = [];
         foreach($params as $key => $item) {
             if(is_int($key)) {
@@ -370,9 +368,7 @@ class Router {
             }
         }
 
-        if([] !== $matches) {
-            $params['@matches'] = $matches;
-        }
+        return [$params, $matches];
     }
 
     /**

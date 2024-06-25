@@ -198,8 +198,8 @@ class Route {
      */
     public function getPattern(): string {
         $path = str_replace('/', '\/', str_path($this->path));
-        //$path = preg_replace('#{(\w+)}#', '(?<$1>\w+)', $path); // Replace wildcards
-        $path = preg_replace('#{(.*?)}#', '(?<$1>(?!.*/).*)', $path);
+        $path = preg_replace('#{(\w+)}#', '(?<$1>\w+)', $path); // Replace wildcards
+        //$path = preg_replace('#{(.*?)}#', '(?<$1>(?!.*/).*)', $path);
         
         return '#^'.$path.'$#i';
     }

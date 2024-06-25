@@ -192,15 +192,6 @@ class Request {
     }
 
     /**
-     * Return the regex matches from a requested route
-     * 
-     * @return array
-     */
-    public function getMatches(): array {
-        return $this->matches;
-    }
-
-    /**
      * Add parameters to Request object in the $_GET array
      * 
      * @param array $query $_GET params
