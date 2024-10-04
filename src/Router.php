@@ -18,9 +18,11 @@ use rguezque\Forge\Interfaces\EngineInterface;
 use rguezque\Forge\Router\Attributes\GroupAttribute;
 use rguezque\Forge\Router\Attributes\RouteAttribute;
 
+use function rguezque\Forge\functions\add_trailing_slash;
 use function rguezque\Forge\functions\generator;
 use function rguezque\Forge\functions\remove_trailing_slash;
 use function rguezque\Forge\functions\str_ends_with;
+use function rguezque\Forge\functions\str_path;
 
 /**
  * Router
@@ -47,7 +49,7 @@ class Router {
      * 
      * @var string[]
      */
-    protected $supported_request_methods = [];
+    private $supported_request_methods = [];
 
     /**
      * Routes collection
@@ -68,7 +70,7 @@ class Router {
      * 
      * @var string
      */
-    protected $basepath = '';
+    private $basepath = '';
 
     /**
      * Route names
@@ -85,17 +87,29 @@ class Router {
     private $engine;
 
     /**
-     * Allowed origins for CORS
+     * CORS Configuration
      * 
-     * @var string[]
+     * @var CorsConfig
      */
-    private $allowed_origins = [];
+    private $cors;
 
     /**
      * @param array $options Array with configs definition
      */
     public function __construct(array $options = []) {
-        Configurator::configure($this, $options);
+        // Default router basepath
+        $this->basepath = isset($options['router.basepath']) 
+        ? str_path($options['router.basepath']) 
+        : remove_trailing_slash(str_replace(['\\', ' '], ['/', '%20'], dirname($_SERVER['SCRIPT_NAME'])));
+
+        // Default directory for search views templates
+        $viewspath = isset($options['router.views.path']) && is_string($options['router.views.path']) 
+            ? add_trailing_slash(trim($options['router.views.path'])) 
+            : '';
+        Globals::set('router.views.path', add_trailing_slash(trim($viewspath)));
+
+        // Set the supported requeste methods for the router
+        $this->supported_request_methods = isset($options['router.supported.request.methods']) ? array_unique($options['router.supported.request.methods']) : ['GET', 'POST'];
     }
 
     /**
@@ -153,12 +167,12 @@ class Router {
     /**
      * Set the Cross-Origin Resources Sharing
      * 
-     * @param string[] Array with allowed origins (allow regex). Ej: '(http(s)://)?(www\.)?localhost:3000'
+     * @param CorsConfig Object with CORS configuration. Allowed origins definition like regex). Ej: '(http(s)://)?(www\.)?localhost:3000'
      * @return Router
      */
-    public function cors(array $allowed_origins): Router {
-        $this->allowed_origins = $allowed_origins;
-        
+    public function setCors(CorsConfig $cors_config): Router {
+        $this->cors = $cors_config;
+
         return $this;
     }
 
@@ -252,7 +266,8 @@ class Router {
         static $invoke_once = false;
 
         if(!$invoke_once) {
-            $this->resolveCors($request);
+            //Enable Cross-Origin Resources Sharing
+            call_user_func($this->cors, $request);
             $this->resolveRouteGroups();
             $invoke_once = true;
 
@@ -269,8 +284,8 @@ class Router {
      * @throws RouteNotFoundException
      */
     private function resolve(Request $request): Response {
-        $server = $request->getServerParams()->all();
-        $request_method = $server['REQUEST_METHOD'];
+        $server = $request->getServerParams();
+        $request_method = $server->get('REQUEST_METHOD');
 
         // Check for valid request method
         if(!in_array($request_method, $this->supported_request_methods)) {
@@ -278,7 +293,7 @@ class Router {
         }
 
         // Catch the request uri
-        $request_uri = $this->filterRequestUri($server['REQUEST_URI']);
+        $request_uri = $this->filterRequestUri($server->get('REQUEST_URI'));
 
         /**
          * Select the route collection according the request method and implement a generator. 
@@ -353,7 +368,7 @@ class Router {
     }
 
     /**
-     * Filter an arguments array. Regex matches are pushed into a lineal array.
+     * Filter arguments array. Regex matches are pushed into a lineal array.
      * 
      * @deprecated
      * @param array $params Array to process
@@ -369,28 +384,6 @@ class Router {
         }
 
         return [$params, $matches];
-    }
-
-    /**
-     * Enable Cross-Origin Resources Sharing
-     * 
-     * @param Request $request Request object
-     * @return void
-     */
-    private function resolveCors(Request $request): void {
-        $server = $request->getServerParams();
-
-        if ($server->has('HTTP_ORIGIN') && $server->get('HTTP_ORIGIN') != '') {
-            foreach ($this->allowed_origins as $allowed_origin) {
-                if (preg_match('#' . $allowed_origin . '#', $server->get('HTTP_ORIGIN'))) {
-                    header('Access-Control-Allow-Origin: ' . $server->get('HTTP_ORIGIN'));
-                    header('Access-Control-Allow-Methods: ' . implode(', ', $this->supported_request_methods));
-                    header('Access-Control-Max-Age: 1000');
-                    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-                    break;
-                }
-            }
-        }
     }
 
     /**
