@@ -137,11 +137,11 @@ Emitter::emit($response);
 
 El router puede recibir como parámetros un array asociativo con las opciones disponibles de configuración. Las opciones disponibles son:
 
-- `'set.basepath'`: Especifica un directorio base en caso de que el router este alojado en un subdirectorio de la raíz del servidor.
+- `'router.basepath'`: Especifica un directorio base en caso de que el router este alojado en un subdirectorio de la raíz del servidor.
 
-- `'set.supported.request.methods'`: Define un *array* que sobrescribe los métodos de petición http permitidos por el router. Por default el router acepta `GET` y `POST`.
+- `'router.supported.request.methods'`: Define un *array* que sobrescribe los métodos de petición http permitidos por el router. Por default el router acepta `GET` y `POST`.
 
-- `'set.views.path'`: *(Opcional)* Especifica un directorio global donde se buscarán por default los archivos de *templates* para las vistas, ya sea para rutas que renderizan vistas (`RouteView`) o bien para la clase `View`. 
+- `'router.views.path'`: *(Opcional)* Especifica un directorio global donde se buscarán por default los archivos de *templates* para las vistas, ya sea para rutas que renderizan vistas (`RouteView`) o bien para la clase `View`. 
 
   **Nota:** Si se define un nuevo directorio de *templates* al crear un objeto de `View`  este tendrá preferencia sobre el directorio global.
 
@@ -229,19 +229,10 @@ public function helloAction(Request $request, Response $response): Response {
 //...
 ```
 
-**Nota:** No se recomienda definir parámetros nombrados y en forma de expresiones regulares en la misma ruta. De ser así, aunque se devuelven todas las coincidencias no será posible acceder por nombre con `Bag::get` a las que hayan sido definidas como _regex_ y tendrás que acceder a cada una a través de su posición numérica en el array devuelto por `Bag::all`; por ejemplo la ruta `/{nombre}/(\w)/{edad}` devolverá parámetros con esta estructura:
-
-```php
-Array ( 
-    [name] => John 
-    [0] => John 
-    [1] => Doe 
-    [edad] => 33 
-    [2] => 33 
-)
-```
-
-Para las rutas que solo devuelven una vista (Ver [Routes](#routes)) es obligatorio que si dicha ruta contiene parámetros deben ser parámetros nombrados, pues se agregan como parámetros al *template* de la vista.
+>[!IMPORTANT]
+>No se recomienda definir parámetros nombrados y en forma de expresiones regulares en la misma ruta. De ser así, aunque se devuelven todas las coincidencias no será posible acceder por nombre a las que hayan sido definidas como _regex_ y tendrás que acceder a cada una a través de su posición numérica en el array devuelto por `Bag::all`. En todo caso es altamente recomendable usar solo los parámetros nombrados, ya que son requeridos en caso de utilizar `UrlGenerator`.
+>
+>Para las rutas que solo devuelven una vista (Ver [Routes](#routes)) es obligatorio que si dicha ruta contiene parámetros deben ser parámetros nombrados, pues se agregan como argumentos al *template* de la vista.
 
 ## Routes group
 
@@ -509,10 +500,12 @@ Emitter::emit($response);
 
 Esta clase permite crear contenedores e inyectar dependencias. Cuenta con cinco métodos:
 
-- `Injector::add`: Recibe el nombre de la dependencia y el nombre de la clase a instanciar así como los parámetros a inyectar. Si solo se envía la clase a instanciar, se toma el nombre de la clase como el nombre de dicha dependencia. También se permite agregar un `Closure` como dependencia, en cuyo caso es obligatorio asignar un nombre.
+- `Injector::add`: Recibe el nombre de la dependencia y el nombre de la clase a instanciar así como los parámetros a inyectar. Si solo se envía la clase a instanciar, se toma el nombre de la clase como el nombre de dicha dependencia. También se permite agregar un `Closure` o un método estático como dependencia, en cuyo caso es obligatorio asignar un nombre.
 - `Injector::addParameter`: Permite agregar un parámetro a una clase agregada al contenedor.
 - `Injector::addParameters`: Permite agregar varios parámetros a una clase agregada al contenedor a través de un array.
-- `Injector::get`: Recupera una dependencia por su nombre. Opcionalmente puede recibir como segundo argumento un *array* con argumentos (válgase la redundancia) utilizados por la dependencia solicitada, esto es útil cuando la dependencia es una función cuyo resultado dependerá de parámetros enviados al momento de llamarla. En el caso de que la dependencia sea una clase instanciada, estos argumentos se inyectarán al final, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
+- `Injector::get`: Recupera una dependencia por su nombre. Opcionalmente puede recibir como segundo argumento un *array* con argumentos utilizados por la dependencia solicitada, esto es útil cuando la dependencia es una función o método estático cuyo resultado dependerá de parámetros enviados al momento de llamarla. 
+
+En el caso de que la dependencia sea una clase, se devolverá una instancia de esta, y si se mandan argumentos adicionales se inyectarán también al constructor, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
 - `Injector::has`: Verifica si existe una dependencia por su nombre.
 
 También se puede usar como métodos estáticos a través del *facade* `Container`.
@@ -719,7 +712,8 @@ Almacena y proporciona acceso a las variables de `$GLOBALS` mediante métodos es
 
 Las vistas son el medio por el cual el router devuelve y renderiza un objeto `Response` con contenido HTML en el navegador. La única configuración que se necesita es definir el directorio en donde estarán alojados los archivos *templates*. 
 
-**Nota:** Si previamente de ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configurator](#configurator)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
+>[!NOTE]
+>Si previamente se ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configurator](#configurator)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
 
 ```php
 use rguezque\Forge\Router\View;
@@ -870,7 +864,8 @@ DB_PASS="mypassword"
 DB_CHARSET="utf8"
 ```
 
-**Nota:** Se debe usar alguna librería que permita procesar la variables almacenadas en `.env` y cargarlas en las variables `$_ENV`.
+>[!NOTE]
+>Se debe usar alguna librería que permita procesar la variables almacenadas en `.env` y cargarlas en las variables `$_ENV`.
 
 ## Handler
 
@@ -926,8 +921,6 @@ $services->register('users', function() use($services) {
 });
 
 ```
-
-**Nota:** La clase `Users` también dispone del método público `Users::findUser` el cual es utilizado internamente por el controlador encargado de hacer el *login*. Este método ejecuta la consulta en la base de datos; si encuentra el usuario y coincide la contraseña, devuelve un array asociativo con los datos encontrados relacionados al usuario, de lo contrario devolverá un array vacío. De esta forma la clase `Users` puede ser reutilizada para otros proyectos.
 
 ## Functions
 
