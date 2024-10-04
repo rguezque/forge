@@ -38,13 +38,11 @@ class RouteView extends Route {
     /**
      * Create the route definition and view to render
      * 
-     * @param string $name Route name
      * @param string $path Route path
      * @param string $template Template file path
      * @param array $arguments Arguments to pass to template
      */
     public function __construct(
-        string $name, 
         string $path, 
         string $template, 
         array $arguments = []
@@ -53,7 +51,6 @@ class RouteView extends Route {
         $this->template = remove_leading_slash($template);
         $this->arguments = $arguments;
         $this->request_method = 'GET';
-        $this->name = $name;
         $this->views_path = Globals::has('router.views.path') 
             ? Globals::get('router.views.path') 
             : '';
@@ -67,7 +64,7 @@ class RouteView extends Route {
      */
     public function render(): Response {
         $view = new View;
-        $rendered_view = $view->template($this->template, $this->arguments)->render();
+        $rendered_view = $view->template($this->views_path.$this->template, $this->arguments)->render();
 
         return new Response($rendered_view, Response::HTTP_OK);
     }

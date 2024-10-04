@@ -21,7 +21,6 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
 - [Services Provider](#services-provider)
   - [The `Services` class](#the-services-class)
 - [Container vs Services](#container-vs-services)
-- [Uri Generator](#uri-generator)
 - [Request](#request)
 - [Response](#response)
   - [Json Response](#json-response)
@@ -40,6 +39,7 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
 - [DB Connection](#db-connection)
   - [Connecting using an URL](#connecting-using-an-url)
   - [Auto connect](#auto-connect)
+- [CORS](#cors)
 - [Handler](#handler)
 - [Users](#users)
 - [Functions](#functions)
@@ -108,13 +108,13 @@ require __DIR__.'/vendor/autoload.php';
 
 $router = new Router;
 
-$router->addRoute(new Route('GET', 'index', '/', FooController::class, 'indexAction'));
+$router->addRoute(new Route('GET', '/', FooController::class, 'indexAction'));
 
-$router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}', FooController::class, 'holaAction'));
+$router->addRoute(new Route('GET', '/hola/{nombre}', FooController::class, 'holaAction'));
 
 $router->addRouteGroup('/foo', function(RouteGroup $group) {
-    $group->addRoute(new Route('GET', 'foo_index', '/', FooController::class, 'fooAction'));
-    $group->addRoute(new Route('GET', 'foo_bar', '/bar', FooController::class, 'barAction'));
+    $group->addRoute(new Route('GET', '/', FooController::class, 'fooAction'));
+    $group->addRoute(new Route('GET', '/bar', FooController::class, 'barAction'));
 });
 
 try {
@@ -150,9 +150,9 @@ El router puede recibir como parámetros un array asociativo con las opciones di
 use rguezque\Forge\Router\Router;
 
 $router = new Router([
-    'set.basepath' => '/myapp',
-    'set.supported.request.methods' => ['GET', 'POST', 'PUT'],
-    'set.viewspath' => __DIR__.'/templates'
+    'router.basepath' => '/myapp',
+    'router.supported.request.methods' => ['GET', 'POST', 'PUT'],
+    'router.viewspath' => __DIR__.'/templates'
 ]);
 //$router->addRoute(...)
 //...
@@ -160,35 +160,35 @@ $router = new Router([
 
 ## Routes
 
-El método `Router::addRoute` permite agregar una ruta. Una ruta se representa por una instancia de `Route`. Esta clase recibe cinco parámetros obligatorios; el método de petición, un nombre único para la ruta, el *string path*, el nombre del controlador y el nombre del método a ejecutar para dicha ruta. Por default los únicos métodos aceptados por el router son `GET` y `POST` (Ver [Configurator](#configurator) si requieres definir o agregar tus propios métodos http de petición aceptados.).
+El método `Router::addRoute` permite agregar una ruta. Una ruta se representa por una instancia de `Route`. Esta clase recibe cuatro parámetros obligatorios; el método de petición, el *string path*, el nombre del controlador y el nombre del método a ejecutar para dicha ruta. Por default los únicos métodos aceptados por el router son `GET` y `POST` (Ver [Configure router](#configure-router) si requieres definir o agregar tus propios métodos http de petición aceptados.).
 
 Por ejemplo si una ruta recibirá una petición `POST`:
 
 ```php
-$router->addRoute(new Route('POST', 'save_article', '/article/save', BlogController::class, 'saveNewAction'));
+$router->addRoute(new Route('POST', '/article/save', BlogController::class, 'saveNewAction'));
 ```
 
 El router también acepta dos rutas con el mismo *string path* pero diferente método de petición, nombre y acción a ejecutar.
 
 ```php
-$router->addRoute(new Route('GET', 'show_articles', '/articles', BlogController::class, 'saveNewAction'));
-$router->addRoute(new Route('POST', 'save_articles', '/articles', BlogController::class, 'updateAction'));
+$router->addRoute(new Route('GET', '/articles', BlogController::class, 'saveNewAction'));
+$router->addRoute(new Route('POST', '/articles', BlogController::class, 'updateAction'));
 ```
 
-Para definir rutas que solo devuelven una vista, sin tener que definir un controlador, se envía una instancia de `RouteView`. Recibe 4 parámetros, el nombre de la ruta, la definición de la ruta, la ruta a la plantilla y opcionalmente un *array* asociativo con argumentos a pasar a dicha plantilla. Todos los `RouteView` son te tipo `GET` por default.
+Para definir rutas que solo devuelven una vista, sin tener que definir un controlador, se envía una instancia de `RouteView`. Recibe tres parámetros; la definición de la ruta, la ruta a la plantilla y opcionalmente un *array* asociativo con argumentos a pasar a dicha plantilla. Todos los `RouteView` son de tipo `GET` por default.
 
 ```php
-$router->addRoute(new RouteView('main_home', '/', __DIR__.'/views/homepage.php'));
+$router->addRoute(new RouteView('/', __DIR__.'/views/homepage.php'));
 
-$router->addRoute(new RouteView('hello_view', '/hello/{name}', __DIR__.'/views/hello.php'));
+$router->addRoute(new RouteView('/hello/{name}', __DIR__.'/views/hello.php'));
 
 $router->addRouteGroup('/foo', function(RouteGroup $group) {
-    $group->addRoute(new RouteView('login_from', '/', __DIR__.'/views/login_form.php', ['action'=>'/foo/login']));
-    $group->addRoute(new Route('foo_login', '/foo/login', FooController::class, 'helloAction'));
+    $group->addRoute(new RouteView('/', __DIR__.'/views/login_form.php', ['action'=>'/foo/login']));
+    $group->addRoute(new Route('/foo/login', FooController::class, 'helloAction'));
 });
 ```
 
-**Nota:** Si previamente se ha definido el directorio de *templates* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configurator](#configurator)). Si hay un parámetro nombrado en la definición de ruta de `RouteView` se manda como parámetros al template.
+**Nota:** Si previamente se ha definido el directorio de las *vistas* en la configuración no es necesario especificar la ruta completa, simplemente el nombre del template (Ver [Configure router](#configure-router)). Si hay un parámetro nombrado en la definición de ruta de `RouteView` se manda como parámetros al template.
 
 ### Wildcards
 
@@ -199,14 +199,12 @@ Si una ruta tiene *wildcards*[^2] nombrados, se recuperan en un objeto `Bag` (Ve
 //...
 $router->addRoute(new Route(
     'GET', 
-    'saludo',
     '/hola/(\w+)/(\w+)',
     FooController::class,
     'holaAction'
 ));
 $router->addRoute(new Route(
     'GET', 
-    'hello_page',
     '/hello/{name}/{lastname}',
     FooController::class,
     'helloAction'
@@ -230,7 +228,7 @@ public function helloAction(Request $request, Response $response): Response {
 ```
 
 >[!IMPORTANT]
->No se recomienda definir parámetros nombrados y en forma de expresiones regulares en la misma ruta. De ser así, aunque se devuelven todas las coincidencias no será posible acceder por nombre a las que hayan sido definidas como _regex_ y tendrás que acceder a cada una a través de su posición numérica en el array devuelto por `Bag::all`. En todo caso es altamente recomendable usar solo los parámetros nombrados, ya que son requeridos en caso de utilizar `UrlGenerator`.
+>No se recomienda definir parámetros nombrados y en forma de expresiones regulares en la misma ruta. De ser así, aunque se devuelven todas las coincidencias no será posible acceder por nombre a las que hayan sido definidas como _regex_ y tendrás que acceder a cada una a través de su posición numérica en el array devuelto por `Bag::all`.
 >
 >Para las rutas que solo devuelven una vista (Ver [Routes](#routes)) es obligatorio que si dicha ruta contiene parámetros deben ser parámetros nombrados, pues se agregan como argumentos al *template* de la vista.
 
@@ -240,9 +238,9 @@ El método `Router::addRouteGroup` permite crear un grupo de rutas bajo un mismo
 
 ```php
 $router->addRouteGroup('/foo', function(RouteGrup $group) {
-    $group->addRoute(new Route('GET', 'foo_index', '/', FooController::class, 'holaAction'));
-    $group->addRoute(new Route('GET', 'foo_hello_page', '/hello/{nombre}', FooController::class, 'helloAction'));
-    $group->addRoute(new Route('GET', 'foo_bar_page', '/bar/entry/{id}', FooController::class, 'entryAction'));
+    $group->addRoute(new Route('GET', '/', FooController::class, 'holaAction'));
+    $group->addRoute(new Route('GET', '/hello/{nombre}', FooController::class, 'helloAction'));
+    $group->addRoute(new Route('GET', '/bar/entry/{id}', FooController::class, 'entryAction'));
 });
 ```
 
@@ -264,7 +262,7 @@ Los controladores reciben un parámetro `Request` y un `Response` dependiendo de
 // index.php
 //...
 $router = new Router;
-$router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}/{apellido}', FooController::class, 'holaAction'));
+$router->addRoute(new Route('GET', '/hola/{nombre}/{apellido}', FooController::class, 'holaAction'));
 //...
 ```
 
@@ -355,19 +353,19 @@ use rguezque\Forge\Router\Attributes\RouteAttribute;
 
 class MainController {
 
-    #[RouteAttribute('GET', 'index_page', '/')]
+    #[RouteAttribute('GET', '/')]
     public function indexAction(Request $request, Response $response) {
         return $response->withContent('Hola mundo!');
     }
     
-    #[RouteAttribute('GET', 'about_page', '/about')]
+    #[RouteAttribute('GET', '/about')]
     public function indexAction(Request $request, Response $response) {
         return $response->withContent('Hola mundo!');
     }
 }
 ```
 
-Por cada método se define uno o más atributos `RouteAttribute` que debe contener los valores: método de petición de la ruta, nombre de la ruta y el _string path_ de la ruta. Para el caso de los grupos de rutas, se debe definir un atributo `GroupAttribute` para la clase, el cual recibe como valor el prefijo del grupo de rutas:
+Por cada método se define uno o más atributos `RouteAttribute` que debe contener los valores: método de petición de la ruta, y el _string path_ de la ruta. Para el caso de los grupos de rutas, se debe definir un atributo `GroupAttribute` para la clase, el cual recibe como valor el prefijo del grupo de rutas:
 
 ```php
 namespace App;
@@ -382,12 +380,12 @@ use rguezque\Forge\Router\Attributes\RouteAttribute;
 #[GroupAttribute('/foo')]
 class MainController {
 
-    #[RouteAttribute('GET', 'index_page', '/')]
+    #[RouteAttribute('GET', '/')]
     public function indexAction(Request $request, Response $response) {
         return $response->withContent('Hola mundo!');
     }
     
-    #[RouteAttribute('GET', 'about_page', '/about')]
+    #[RouteAttribute('GET', '/about')]
     public function indexAction(Request $request, Response $response) {
         return $response->withContent('Hola mundo!');
     }
@@ -440,7 +438,7 @@ public function holaAction(Request $request, Response $response): Response {
 ```php
 // index.php
 //...
-$router->addRoute(new Route('GET', 'show_page', '/show/{id}', FooController::class, 'showAction'));
+$router->addRoute(new Route('GET', '/show/{id}', FooController::class, 'showAction'));
 $app = new JsonEngine();
 $router->setEngine($app);
 
@@ -537,7 +535,7 @@ $engine = new ApplicationEngine();
 $engine->setServices($services)
 
 $router = new Router;
-$router->addRoute(new Route('GET', 'index', '/', FooController::class, 'indexAction'));
+$router->addRoute(new Route('GET', '/', FooController::class, 'indexAction'));
 
 $router->setEngine($engine);
 $router->handleRequest(Request::fromGlobals());
@@ -557,29 +555,6 @@ public function indexAction(Request $request, Response $response, Services $serv
 ## Container vs Services
 
 Solo se puede implementar uno a la vez, o se elige usar un contenedor de dependencias (`EngineInterface::setContainer`) o bien el proveedor de servicios (`EngineInterface::setServices`). Si se intenta utilizar ambos el que sea asignado en última instancia sobrescribirá al primero.
-
-## URL Generator
-
-Esta clase permite hacer *reverse routing* (generar la URL de cada ruta a partir de su nombre y string de la ruta asociada).
-
-Al crear una instancia de `UrlGenerator` se envía como argumento los nombres y URL de las rutas proporcionado por `Router::getRouteNames`.
-
-```php
-$router = new Router;
-$router->addRoute(/*...*/);
-// ...
-$generator = new UrlGenerator($router->getRouteNames());
-```
-
-Para generar una URL se invoca el método estático `UrlGenerator::reverseRouting`, que recibe el nombre de la ruta y los parámetros para la ruta si es necesario. Los parámetros se envían en un array donde cada clave debe llamarse igual que cada *wildcard* definido en la ruta.
-
-```php
-// Al defnir la ruta
-$router->addRoute(new Route('GET', 'hola_page', '/hola/{nombre}', MyController::class, 'holaAction'));
-
-UrlGenerator::reverseRouting('hola_page', ['nombre' = 'John']);
-// Generará la URL "/hola/John"
-```
 
 ## HTTP
 
@@ -713,7 +688,7 @@ Almacena y proporciona acceso a las variables de `$GLOBALS` mediante métodos es
 Las vistas son el medio por el cual el router devuelve y renderiza un objeto `Response` con contenido HTML en el navegador. La única configuración que se necesita es definir el directorio en donde estarán alojados los archivos *templates*. 
 
 >[!NOTE]
->Si previamente se ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configurator](#configurator)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
+>Si previamente se ha definido el directorio de *templates* en la configuración no es necesario especificarlo en el constructor de la clase `View` (Ver [Configure router](#configure-router)), aunque si se define un directorio aquí, este tendrá prioridad sobre la configuración inicial.
 
 ```php
 use rguezque\Forge\Router\View;
@@ -866,6 +841,34 @@ DB_CHARSET="utf8"
 
 >[!NOTE]
 >Se debe usar alguna librería que permita procesar la variables almacenadas en `.env` y cargarlas en las variables `$_ENV`.
+
+## CORS
+
+El método `Router::setCors` permite definir una configuración de dominios externos (origenes) a los que se les permite hacer peticiones de recursos restringidos, mejor conocido como **CORS** *(Cross-Origin Resource Sharing)*. 
+
+Esta configuración se define a través de un objeto `CorsConfig` en el cual se agregan los origenes, los métodos de petición permitidos para cada *origen* y encabezados http aceptados.
+
+```php
+require __DIR__.'/vendor/autoload.php';
+
+use rguezque\Forge\Router\Router;
+use rguezque\Forge\Router\CorsConfig;
+
+$router = new Router;
+
+// Ejemplo
+$cors = new CorsConfig;
+$cors->addOrigin(
+    '(http(s)://)?(www\.)?localhost:3000', // origen
+    ['GET', 'POST'], // métodos de petición aceptados
+    ['X-Requested-With'] // headers aceptados
+);
+
+$router->setCors($cors);
+```
+
+Los métodos y encabezados http son opcionales, por default los métodos aceptados son `GET` y `POST`, y los encabezados permitidos son `Content-Type`. `Accept`, y `Authorization`.
+
 
 ## Handler
 

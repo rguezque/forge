@@ -18,13 +18,11 @@ use function rguezque\Forge\functions\str_prepend;
  * @method Route prependStringPath(string $prepend) Prepend a string to route path
  * @method Route setArguments(array $arguments) Assign the arguments to be passed to route controller
  * @method array getArguments() Retrieve the arguments to be passed to route controller
- * @method string getName() Retrieve the route name
  * @method string getPath() Retrieve the route path
  * @method string getController() Retrieve the route controller
  * @method string getAction() Retrieve the action(method) name of the route controller
  * @method string getRequestMethod() Retrieve the request method for the route
  * @method string getPattern() Retrieve the regex pattern of the route
- * @method void setBefore(callable $action) set a middleware for controller
  */
 class Route {
 
@@ -57,13 +55,6 @@ class Route {
     protected $request_method = '';
 
     /**
-     * Route name
-     * 
-     * @var string
-     */
-    protected $name = '';
-
-    /**
      * Arguments for the route action
      * 
      * @var array
@@ -71,30 +62,20 @@ class Route {
     protected $arguments = [];
 
     /**
-     * Middleware to execute before the controller
-     * 
-     * @var callable
-     */
-    protected $hook = null;
-
-    /**
      * Create the route definition
      * 
      * @param string $request_method Route request method
-     * @param string $name Route name
      * @param string $path Route string path
      * @param string $controller Controller name
      * @param string $action Action name
      */
     public function __construct(
         string $request_method,
-        string $name, 
         string $path, 
         string $controller, 
         string $action
     ) {
         $this->request_method = strtoupper(trim($request_method));
-        $this->name           = trim($name);
         $this->path           = str_path($path);
         $this->controller     = $controller;
         $this->action         = $action;
@@ -144,15 +125,6 @@ class Route {
      */
     public function getArguments(): array {
         return $this->arguments;
-    }
-
-    /**
-     * Retrieve the route name
-     * 
-     * @return string
-     */
-    public function getName(): string {
-        return $this->name;
     }
 
     /**

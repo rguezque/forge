@@ -27,13 +27,10 @@ class RouteAttribute {
     
     public $method = '';
 
-    public $name = '';
-
     public $path = '';
 
-    public function __construct(string $method, string $name, string $path) {
+    public function __construct(string $method, string $path) {
         $this->method = strtoupper(trim($method));
-        $this->name = trim($name);
         $this->path = str_path($path);
     }
 }

@@ -28,22 +28,13 @@ use function rguezque\Forge\functions\str_path;
  * Router
  * 
  * @method Router addControllersWithAttributes(array $controllers) Allows you to load controllers with attributes that are used to define routes and routes groups
- * @method Router cors(array $origins) Set the Cross-Origin Resources Sharing
+ * @method Router setCors(CorsConfig $cors_config) Set the Cross-Origin Resources Sharing
  * @method Router setEngine(EngineInterface $engine) Set a router engine, tells how to process request and response
  * @method Route addRoute(Route $route) Add a route to the route collection
  * @method RouteGroup addRouteGroup(string $namespace, Route ...$routes) Add routes group with a common namespace
- * @method Bag getRouteNames() Return all the route names array into a Bag object
  * @method Response handleRequest(Request $request) Handle the request URI and routing
  */
 class Router {
-
-    /**
-     * Index name in $GLOBAL that contains the route names array
-     * 
-     * @var string
-     */
-    const ROUTER_ROUTE_NAMES_ARRAY = 'router_route_names_array';
-
     /**
      * Supported request methods for the application
      * 
@@ -159,7 +150,7 @@ class Router {
             foreach($attributes as $attribute) {
                 $route = $attribute->newInstance();
 
-                $this->addRoute(new Route($route->method, $route->name, $prefix.$route->path, $controller, $method->getName()));
+                $this->addRoute(new Route($route->method, $prefix.$route->path, $controller, $method->getName()));
             }
         }
     }
@@ -197,16 +188,10 @@ class Router {
      * @throws BadNameException
      */
     public function addRoute(Route $route): Router {
-        // Check for already existent route name and avoid overwrite
-        $name = $route->getName();
-        if(array_key_exists($name, $this->route_names)) {
-            throw new DuplicityException(sprintf('Already exists a route with name "%s".', $name));
-        }
-        
         // Check for allowed request method
         $http_request_method = $route->getRequestMethod();
         if(!in_array($http_request_method, $this->supported_request_methods)) {
-            throw new UnsupportedRequestMethodException(sprintf('HTTP request method %s isn\'t allowed in route definition for {name: "%s", path: "%s"}.', $http_request_method, $name, $route->getPath()));
+            throw new UnsupportedRequestMethodException(sprintf('HTTP request method %s isn\'t allowed in route definition for {path: "%s"}.', $http_request_method, $route->getPath()));
         }
 
         // Avoid checking RouteView objects because they don't have a controller
@@ -223,8 +208,6 @@ class Router {
 
         // Add the router basepath to route path
         $route->prependStringPath($this->basepath);
-        // Add the route name to the array of route names
-        $this->route_names[$name] = $route->getPath();
         // Add the route to collection (GET,POST,PUT or DELETE) according to request method of the route
         $this->routes[$http_request_method][] = $route;
 
@@ -246,15 +229,6 @@ class Router {
     }
 
     /**
-     * Return all the route names array into a Bag object
-     * 
-     * @return Bag
-     */
-    public function getRouteNames(): Bag {
-        return new Bag($this->route_names);
-    }
-
-    /**
      * Handle the request URI and routing
      * 
      * @param Request $request Request object
@@ -267,11 +241,23 @@ class Router {
 
         if(!$invoke_once) {
             //Enable Cross-Origin Resources Sharing
-            call_user_func($this->cors, $request);
+            $this->resolveCors($request);
             $this->resolveRouteGroups();
             $invoke_once = true;
 
             return $this->resolve($request);
+        }
+    }
+
+    /**
+     * Resolve the CORS configuration
+     * 
+     * @param Request $request Request object with request origin information
+     * @return void
+     */
+    function resolveCors(Request $request): void {
+        if(null !== $this->cors) {
+            call_user_func($this->cors, $request);
         }
     }
 
