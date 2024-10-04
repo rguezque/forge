@@ -171,7 +171,12 @@ class View {
             throw new FileNotFoundException(sprintf('Don\'t exists the template file "%s".', $template));
         }
 
-        extract($params);
+        // If there is an invalid variable name (for example an array that is not associative) 
+        // it is assigned the prefix 'param_view' followed by the number of its index in the array. 
+        // Example: extract([12, 32], EXTR_PREFIX_INVALID, 'param_view') it will generate 
+        // $param_view_0 and $param_view_1 with values 12 and 32 respectively
+        extract($params, EXTR_PREFIX_INVALID, 'param_view');
+        
         ob_start();
         include $template;
         $rendered_view = ob_get_clean();
