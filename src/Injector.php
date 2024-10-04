@@ -13,6 +13,7 @@ use rguezque\Forge\Exceptions\ClassNotFoundException;
 use rguezque\Forge\Exceptions\DependencyNotFoundException;
 use rguezque\Forge\Exceptions\DuplicityException;
 use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * Dependencies container.
@@ -34,11 +35,11 @@ class Injector {
      * Add a dependency to container
      * 
      * @param string $name Dependendy name
-     * @param string|Closure $object Dependency
+     * @param callable $object Dependency
      * @return Dependency|void
      * @throws DuplicityException
      */
-    public function add(string $name, $object = null) {
+    public function add(string $name, callable $object = null) {
         if($this->has($name)) {
             throw new DuplicityException(sprintf('Already exists a dependency with name "%s".', $name));
         }
@@ -48,7 +49,7 @@ class Injector {
         $dependency = new Dependency($object);
         $this->dependencies[$name] = $dependency;
 
-        if(!$object instanceof Closure) {
+        if(!$object instanceof Closure || !is_array($object)) {
             return $dependency;
         }
     }
@@ -67,22 +68,36 @@ class Injector {
         }
 
         // Retrieve the dependency
-        $dependency = $this->dependencies[$name];
+        $dependency_object = $this->dependencies[$name];
+        $dependency = $dependency_object->getDependency();
         
-        if($dependency->getDependency() instanceof Closure) {
-            $closure = $dependency->getDependency();
+        if($dependency instanceof Closure) {
+            return [] !== $arguments ? call_user_func_array($dependency, array_values($arguments)) : call_user_func($dependency);
+        } else if(is_array($dependency)) {
+            list($class, $method) = $dependency;
 
-            return [] !== $arguments ? call_user_func_array($closure, array_values($arguments)) : call_user_func($closure);
-        } else {
-            $class = $dependency->getDependency();
             if(!class_exists($class)) {
                 throw new ClassNotFoundException(sprintf('Don\'t exists the class "%s".', $class));
             }
 
-            $class = new ReflectionClass($class);
+            $rm = new ReflectionMethod($class, $method);
+
+            if(!$rm->isStatic()) {
+                $rc = new ReflectionClass($class);
+                $class = $rc->newInstance();
+                $dependency = [$class, $method];
+            }
+
+            return [] !== $arguments ? call_user_func_array($dependency, array_values($arguments)) : call_user_func($dependency);
+        } else {
+            if(!class_exists($dependency)) {
+                throw new ClassNotFoundException(sprintf('Don\'t exists the class "%s".', $dependency));
+            }
+
+            $class = new ReflectionClass($dependency);
 
             // If has parameters...
-            $parameters = $dependency->getParameters();
+            $parameters = $dependency_object->getParameters();
             if([] !== $parameters) {
                 foreach ($parameters as &$param) {
                     // If parameter exists in the container as dependency, retrieve recursively
