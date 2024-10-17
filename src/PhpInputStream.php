@@ -13,7 +13,7 @@ namespace rguezque\Forge\Router;
  * 
  * @method Bag getParsedStr() Parses the raw query string into variables
  * @method Bag getDecodedJson() Decode variables from a json string
- * @method string getRaw() Return the raw stream
+ * @method string getRawData() Return the raw stream
  */
 class PhpInputStream {
 
