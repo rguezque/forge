@@ -99,17 +99,19 @@ class Injector {
             // If has parameters...
             $parameters = $dependency_object->getParameters();
             if([] !== $parameters) {
-                foreach ($parameters as &$param) {
+                $resolved_params = [];
+                foreach ($parameters as $param) {
                     // If parameter exists in the container as dependency, retrieve recursively
                     if(is_string($param) && $this->has($param)) {
-                        $param = $this->get($param);
+                        $resolved_params[] = $this->get($param);
                     }
                 }
                 
                 if([] !== $arguments) {
-                    $parameters = array_merge($parameters, $arguments);
+                    $resolved_params = array_merge($resolved_params, $arguments);
                 }
-                return $class->newInstanceArgs($parameters);
+                
+                return $class->newInstanceArgs($resolved_params);
             } else {
                 return [] !== $arguments ? $class->newInstanceArgs($arguments) : $class->newInstance();
             }
