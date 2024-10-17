@@ -55,7 +55,7 @@ class PhpInputStream {
      * 
      * @return string
      */
-    public function getRaw(): string {
+    public function getRawData(): string {
         return $this->stream;
     }
 

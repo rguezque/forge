@@ -20,6 +20,7 @@ namespace rguezque\Forge\Router;
  * @method Bag getUploadedFiles() Return the $_FILE params
  * @method Bag getParameters() Return the named parameters of route
  * @method mixed getParameter(string $parameter, $default = null) Return a parameter by name
+ * @method Bag getAllHeaders() Fetches all HTTP headers from the current request
  * @method Request withQueryParams(array $query) Add parameters to Request object in the $_GET array
  * @method Request withBodyParams(array $body) Add parameters to Request object in the $_POST array
  * @method Request withServerParams(array $server) Add parameters to Request object in the $_SERVER array
@@ -189,6 +190,15 @@ class Request {
      */
     public function getParameter(string $parameter, $default = null) {
         return isset($this->parameters[$parameter]) ? $this->parameters[$parameter] : $default;
+    }
+
+    /**
+     * Fetches all HTTP headers from the current request
+     * 
+     * @return Bag
+     */
+    public function getAllHeaders(): Bag {
+        return new Bag(getallheaders());
     }
 
     /**
