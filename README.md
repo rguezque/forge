@@ -565,12 +565,13 @@ La clase `Request` representa una petición HTTP del lado del servidor. Los mét
 - `fromGlobals()`: Método estático que crea un `Request` a partir de los globales `$_GET`, `$_POST`, `$_SERVER`, `$_COOKIE`, `$_FILES`, y un *array* vacío para los parámetros nombrados de las rutas. Los *getters* devuelven un objeto `Bag` (Ver [The Bag Class](#the-bag-class)).
 - `getQueryParams()`: Devuelve los parámetros de `$_GET`.
 - `getBodyParams()`: Devuelve los parámetros de `$_POST`.
-- `getPhpInputStream()`: Devuelve el contenido del *stream* de solo lectura `php://input` a través de un objeto `PhpInputStream`. Dispone de dos métodos: `PhpInputStream::getParsedStr` que devuelve los parámetros de la petición en un array asociativo asbtraido en un objeto `Bag`; y `PhpInputStream::getDecodedJson` que sirve para recuperar parámetros enviados en formato *json* a través de peticiones *ajax*.
+- `getPhpInputStream()`: Devuelve el contenido del *stream* de solo lectura `php://input` a través de un objeto `PhpInputStream`. Dispone de tres métodos: `PhpInputStream::getParsedStr` que devuelve los parámetros de la petición en un array asociativo asbtraido en un objeto `Bag`; y `PhpInputStream::getDecodedJson` que sirve para recuperar parámetros enviados en formato *json* igualmete encapsulados en un objeto `Bag`. Y por último el método `PhpInputStream::getRawData` que devuelve los datos tal cual hayan sido recibidos.
 - `getServerParams()`: Devuelve los parámetros de `$_SERVER`.
 - `getCookieParams()`: Devuelve los parámetros de `$_COOKIE`.
 - `getUploadedFiles()`: Devuelve los parámetros de `$_FILES`.
 - `getParameters()`: Devuelve los parámetros nombrados de una ruta.
 - `getParameter(string $parameter, $default = null)`: Devuelve un parámetro nombrado de una ruta, y si no existe devolverá el valor default especificado.
+- `getAllHeaders()`: Devuelve todos los encabezados HTTP de la petición actual. 
 - `withQueryParams(array $query)`: Agrega a `Request` parámetros `$_GET` especificados.
 - `withBodyParams(array $body)`: Agrega a `Request` parámetros `$_POST` especificados.
 - `withServerParams(array $server)`: Agrega a `Request` parámetros `$_SERVER` especificados.
@@ -583,13 +584,22 @@ La clase `Request` representa una petición HTTP del lado del servidor. Los mét
 
 ### Client Request
 
-La clase `ClientRequest` representa peticiones HTTP desde el lado del cliente.
+La clase `ClientRequest` representa peticiones HTTP desde el lado del cliente. desde el constructor se define la URL y un array opcional con datos de la petición como lo son el método de petición, los encabezados HTTP y posibles datos de petición.
 
 ```php
 use rguezque\Forge\Router\ClientRequest;
 
 // Si se omite el segundo parámetro se asume que será una petición GET
-$request = new ClientRequest('https://jsonplaceholder.typicode.com/posts', 'POST');
+$request = new ClientRequest('https://jsonplaceholder.typicode.com/posts', [
+    'method' => 'POST',
+    'headers' => [
+        'Content-Type' => 'application/x-www-form-urlencoded',
+        'Authorization' => 'Bearer 928348ur3489jr837rry'
+    ],
+    'body' => [
+        'id' => 423
+    ]
+]);
 // Se envía la petición y se recupera la respuesta
 $response = $request->send();
 ```
@@ -602,8 +612,7 @@ Métodos disponibles:
 - `withPostFields($data, bool $encode = true)`: Agrega parámetros a la petición mediante un array asociativo de datos que es convertido a formato JSON.
 - `withBasicAuth(string $username, string $password)`: Agrega un encabezado `Authorization` basado en un nombre de usuario y contraseña simples.
 - `withTokenAuth(string $token)`: Agrega un encabezado `Authorization` basado en JWT.
-- `getInfo()`: Devuelve un `array` asociativo con información sobre la petición enviada. Si se invoca antes de `ClientRequest::send()` devolverá `null`.
-- `send()`: Envía la petición.
+- `send()`: Envía la petición y devuelve el resultado en un _array_ con los índices `status` y `response`. 
 
 ### Response
 
@@ -955,6 +964,8 @@ Se incluyen las siguientes:
 - `str_random($length = 20, $special_chars = true, bool $more_entropy = false)`: Genera una cadena de texto aleatoriamente, con una longitud definida (Por default es de 20).
 - `dd($var)`: Vuelca información de una variable en texto preformateado para una mejor lectura de su cóntenido y termina el script actual.
 - `build_query_string(string $url, array $params)`: Genera una cadena de petición GET.
+- `generate_uuidv4`:  Genera un identificador UUID v4.
+- `generate_ulid`: Genera un identificador ULID.
 
 [^1]: Al final del proyecto utiliza el autoloader optimizado `composer dump-autoload -o`
 [^2]: Un wildcard es uno o varios parámetros que se definen en la ruta, pueden tener un nombre asignado entre llaves `{}` o bien, ser definidos como expresiones regulares; en ambos casos estos harán *match* con la petición que se haga a través del navegador web.
