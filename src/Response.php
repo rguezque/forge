@@ -13,17 +13,12 @@ use OutOfBoundsException;
 /**
  * Represents an HTTP response.
  * 
- * @method Response create(int $code = Response::HTTP_OK, string $phrase = '') Create a Response with a HTTP status code and custom phrase
  * @method Response withContent(string $content) Add content to body of response
  * @method Response withStatus(int $code) Set the http status code
- * @method Response withStatusPhrase(string $phrase) Set the status phrase for the actual response statuc code
- * @method Response withProtocolVersion(string $version) Set the http protocol version
  * @method Response withHeader(string $key, string $value) Add a header to response
  * @method Response withheaders(array $headers) Add headers array to response
  * @method Response clear() Clear headers and content of response and reset to default values
  * @method int getStatus() Retrieves the http status code
- * @method string getStatusPhrase() Retrieves the http status text
- * @method string getProtocolVersion() Retrieves the http protocol version
  * @method string getContent() Retrieves the body of response
  */
 class Response {
@@ -34,20 +29,6 @@ class Response {
      * @var int
      */
     private $status_code;
-
-    /**
-     * HTTP status text
-     * 
-     * @var string
-     */
-    private $status_phrase = '';
-
-    /**
-     * HTTP protocol version
-     * 
-     * @var string
-     */
-    private $version;
 
     /**
      * Headers
@@ -221,34 +202,15 @@ class Response {
         $this->withContent($content);
         $this->withStatus($code);
         $this->withHeaders($headers);
-        $this->withProtocolVersion('1.0');
-    }
-
-    /**
-     * Create a Response with a HTTP status code and custom phrase
-     * 
-     * @param int $code HTTP Status code
-     * @param string $phrase Status phrase
-     * @return Response
-     */
-    public static function create(int $code = Response::HTTP_OK, string $phrase = ''): Response {
-        $response = new Response;
-        $response->withStatus($code);
-        
-        if('' !== $phrase) {
-            $response->withStatusPhrase($phrase);
-        }
-        
-        return $response;
     }
 
     /**
      * Add content to body of response
      * 
-     * @param mixed $content Content of response
+     * @param string $content Content of response
      * @return Response
      */
-    public function withContent($content): Response {
+    public function withContent(string $content): Response {
         $this->content .= $content;
         
         return $this;
@@ -266,30 +228,6 @@ class Response {
         }
 
         $this->status_code = $code;
-        return $this;
-    }
-
-    /**
-     * Set the status phrase for the actual response statuc code
-     * 
-     * @param string $phrase Phrase for actual status code
-     * @return Response
-     */
-    public function withStatusPhrase(string $phrase): Response {
-        $this->status_phrase = $phrase;
-
-        return $this;
-    }
-
-    /**
-     * Set the http protocol version
-     * 
-     * @param string $version Protocol version
-     * @return Response
-     */
-    public function withProtocolVersion(string $version): Response {
-        $this->version = $version;
-
         return $this;
     }
 
@@ -330,26 +268,6 @@ class Response {
     }
 
     /**
-     * Retrieves the http status text
-     * 
-     * @return string
-     */
-    public function getStatusPhrase(): string {
-        return ('' !== $this->status_phrase) 
-        ? $this->status_phrase 
-        : $this->http_status[$this->status_code];
-    }
-
-    /**
-     * Retrieves the http protocol version
-     * 
-     * @return string
-     */
-    public function getProtocolVersion(): string {
-        return $this->version;
-    }
-
-    /**
      * Retrieves the body of response
      * 
      * @return string
@@ -364,12 +282,8 @@ class Response {
      * @return void
      */
     protected function sendHeaders() {
-        if ('HTTP/1.0' != $_SERVER['SERVER_PROTOCOL']) {
-            $this->withProtocolVersion('1.1');
-        }
-
         // Status
-        header(sprintf('HTTP/%s %s %s', $this->getProtocolVersion(), $this->getStatus(), $this->getStatusPhrase()), true, $this->getStatus());
+        http_response_code($this->getStatus());
 
         // Headers
         foreach ($this->headers as $key => $value) {
@@ -403,7 +317,6 @@ class Response {
         $this->headers = [];
         $this->content = '';
         $this->status_code = 200;
-        $this->status_phrase = '';
 
         return $this;
     }
