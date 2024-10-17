@@ -8,6 +8,9 @@
 
 namespace rguezque\Forge\Router;
 
+use Exception;
+use rguezque\Forge\Exceptions\CurlException;
+
 /**
  * Represents an HTTP client-side request.
  * 
@@ -17,10 +20,7 @@ namespace rguezque\Forge\Router;
  * @method ClientRequest withBasicAuth(string $username, string $password) Add an Authorization header for basic authorization
  * @method ClientRequest withTokenAuth(string $token) Add an Authorization header for JWT authorization
  * @method ClientRequest withPostFields($data, bool $encode = true) Add posts fields to send to request
- * @method string|bool send() Send the client request
- * @method mixed getContent() Return the result of http client request
- * @method array toArray() Return the result of http client request decoded from json to an associative array
- * @method array getInfo() Retrieves info about the responsed request
+ * @method array send() Send the client request and return the result into an array with keys "status" and "response".
  */
 class ClientRequest {
 
@@ -60,11 +60,11 @@ class ClientRequest {
     public const DELETE = 'DELETE';
 
     /**
-     * URI to request
+     * URL to request
      * 
      * @var string
      */
-    private $uri;
+    private $url;
 
     /**
      * Default request method
@@ -83,33 +83,21 @@ class ClientRequest {
     /**
      * Data to send
      * 
-     * @var string
+     * @var string|array
      */
-    private $data_string = '';
-
-    /**
-     * Info request
-     * 
-     * @var array
-     */
-    private $info_request = [];
-
-    /**
-     * Resutt of client request
-     * 
-     * @var mixed
-     */
-    private $result;
+    private $body = null;
 
     /**
      * Prepare the request
      * 
      * @var string $uri URI to send the request
-     * @var string $method Default HTTP request method
+     * @var array $options Request options
      */
-    public function __construct(string $uri, string $method = ClientRequest::GET) {
-        $this->uri = $uri;
-        $this->withRequestMethod($method);
+    public function __construct(string $url, array $options = []) {
+        $this->url = $url;
+        $this->method = isset($options['method']) ? $this->withRequestMethod($options['method']) : ClientRequest::GET;
+        $this->headers = isset($options['headers']) ? $this->withHeaders($options['headers']) : [];
+        $this->body = isset($options['body']) ? $this->withPostFields($options['data']) : null;
     }
 
     /**
@@ -148,28 +136,15 @@ class ClientRequest {
     }
 
     /**
-     * Retrieves the headers array
-     * 
-     * @return array
-     */
-    private function getHeaders(): array {
-        $headers = [];
-        foreach($this->headers as $key=>$value) {
-            $headers[] = sprintf('%s: %s', $key, $value);
-        }
-
-        return $headers;
-    }
-
-    /**
-     * Add an Authorization header for basic authorization
+     * Add an Authorization header for basic authorization. The user-id or username 
+     * and password are concatenated with a colon (:) and encoded using Base64.
      * 
      * @var string $username Identity
      * @var string $password Credential
      * @return ClientRequest
      */
     public function withBasicAuth(string $username, string $password): ClientRequest {
-        $this->withHeader('Authorization', sprintf('Basic %s:%s', $username, $password));
+        $this->withHeader('Authorization', sprintf('Basic %s', base64_encode("$username:$password")));
         return $this;
     }
 
@@ -191,59 +166,48 @@ class ClientRequest {
      * @var bool $encode Specifies if data must be encoded to JSON
      * @return ClientRequest
      */
-    public function withPostFields($data, bool $encode = true): ClientRequest {
-        $this->data_string = $encode ? json_encode($data) : $data;
+    public function withPostFields($data): ClientRequest {
+        $this->body = $data;
         return $this;
     }
 
-    /**
-     * Send the client request
-     * 
-     * @return string|bool
-     */
-    public function send() {
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $this->uri);
-
-        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $this->method); 
-        curl_setopt($curl, CURLOPT_FAILONERROR, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $this->data_string);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $this->getHeaders());
-
-        $result = curl_exec($curl);
-        
-        $this->info_request = curl_getinfo($curl);
-        curl_close($curl);
-        
-        $this->result = $result;
-    }
 
     /**
-     * Return the result of http client request
-     * 
-     * @return mixed
-     */
-    public function getContent() {
-        return $this->result;
-    }
-
-    /**
-     * Return the result of http client request decoded from json to an associative array
+     * Send the client request and return the result into an array with keys "status" and "response".
      * 
      * @return array
+     * @throws CurlException
      */
-    public function toArray(): array {
-        return json_decode($this->result, true) ?? [];
-    }
+    public function send(): array {
+        $ch = curl_init();
 
-    /**
-     * Retrieves info about the request
-     * 
-     * @return array
-     */
-    public function getInfo(): array {
-        return $this->info_request;
+        curl_setopt($ch, CURLOPT_URL, $this->url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method);
+
+        if (!empty($this->headers)) {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $this->headers);
+        }
+
+        if ($this->body !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $this->body);
+        }
+
+        $response = curl_exec($ch);
+        $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if (curl_errno($ch)) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            throw new CurlException("cURL error: $error");
+        }
+
+        curl_close($ch);
+
+        return [
+            'status' => $status_code,
+            'response' => $response,
+        ];
     }
 
 }
