@@ -14,11 +14,14 @@ use OutOfBoundsException;
  * Represents an HTTP response.
  * 
  * @method Response withContent(string $content) Add content to body of response
- * @method Response withStatus(int $code) Set the http status code
+ * @method Response withStatusCode(int $code) Set the http status code
+ * @method Response withProtocolVersion(string $version) Set the http protocol version
  * @method Response withHeader(string $key, string $value) Add a header to response
  * @method Response withheaders(array $headers) Add headers array to response
  * @method Response clear() Clear headers and content of response and reset to default values
- * @method int getStatus() Retrieves the http status code
+ * @method int getStatusCode() Retrieves the http status code
+ * @method string getStatusPhrase() Retrieves the http status text
+ * @method string getProtocolVersion() Retrieves the http protocol version
  * @method string getContent() Retrieves the body of response
  */
 class Response {
@@ -29,6 +32,13 @@ class Response {
      * @var int
      */
     private $status_code;
+
+    /**
+     * HTTP protocol version
+     * 
+     * @var string
+     */
+    private $version;
 
     /**
      * Headers
@@ -200,7 +210,7 @@ class Response {
         array $headers = []
     ) {
         $this->withContent($content);
-        $this->withStatus($code);
+        $this->withStatusCode($code);
         $this->withHeaders($headers);
     }
 
@@ -222,12 +232,24 @@ class Response {
      * @param int $code HTTP status code
      * @return Response
      */
-    public function withStatus(int $code): Response {
+    public function withStatusCode(int $code): Response {
         if(!array_key_exists($code, $this->http_status)) {
             throw new OutOfBoundsException('Invalid HTTP status code. See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml');
         }
 
         $this->status_code = $code;
+        return $this;
+    }
+
+    /**
+     * Set the http protocol version
+     * 
+     * @param string $version Protocol version
+     * @return Response
+     */
+    public function withProtocolVersion(string $version): Response {
+        $this->version = $version;
+
         return $this;
     }
 
@@ -263,8 +285,26 @@ class Response {
      * 
      * @return int
      */
-    public function getStatus(): int {
+    public function getStatusCode(): int {
         return $this->status_code;
+    }
+
+    /**
+     * Retrieves the http status text
+     * 
+     * @return string
+     */
+    public function getStatusPhrase(): string {
+        return $this->http_status[$this->status_code];
+    }
+
+    /**
+     * Retrieves the http protocol version
+     * 
+     * @return string
+     */
+    public function getProtocolVersion(): string {
+        return $this->version;
     }
 
     /**
@@ -282,8 +322,12 @@ class Response {
      * @return void
      */
     protected function sendHeaders() {
+        if ('HTTP/1.0' != $_SERVER['SERVER_PROTOCOL']) {
+            $this->withProtocolVersion('1.1');
+        }
+
         // Status
-        http_response_code($this->getStatus());
+        header(sprintf('HTTP/%s %s %s', $this->getProtocolVersion(), $this->getStatusCode(), $this->getStatusPhrase()), true, $this->getStatusCode());
 
         // Headers
         foreach ($this->headers as $key => $value) {
@@ -316,7 +360,7 @@ class Response {
     public function clear(): Response {
         $this->headers = [];
         $this->content = '';
-        $this->status_code = 200;
+        $this->status_code = Response::HTTP_OK;
 
         return $this;
     }
