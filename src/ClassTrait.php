@@ -22,7 +22,7 @@ trait ClassTrait {
      * @throws DependencyNotFoundException
      * @throws NotFoundException
      */
-    private function retrieveControllerClass($controller): object {
+    private function retrieveControllerClass(string $controller): object {
         // Check for dependencies container
         if(isset($this->container) && $this->container instanceof Injector) {
             if(!$this->container->has($controller)) {

@@ -35,7 +35,7 @@ class Arguments extends Bag implements ArgumentsInterface {
      * @param mixed $value Parameter value
      * @return void
      */
-    public function set(string $key, $value): void {
+    public function set(string $key, mixed $value): void {
         $this->bunch[$key] = $value;
     }
 
@@ -46,7 +46,7 @@ class Arguments extends Bag implements ArgumentsInterface {
      * @param mixed $value Parameter value
      * @return void
      */
-    public function __set(string $key, $value): void {
+    public function __set(string $key, mixed $value): void {
         $this->set($key, $value);
     }
 

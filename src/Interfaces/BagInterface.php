@@ -27,7 +27,7 @@ interface BagInterface {
      * @param mixed $default Value to return if the parameter isn't found
      * @return mixed
      */
-    public function get(string $key, $default = null);
+    public function get(string $key, mixed $default = null);
 
     /**
      * Retrieve all parameters array

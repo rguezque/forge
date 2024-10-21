@@ -23,7 +23,7 @@ interface ArgumentsInterface {
      * @param mixed $value Parameter value
      * @return void
      */
-    public function set(string $key, $value): void;
+    public function set(string $key, mixed $value): void;
 
     /**
      * Remove a parameter by name

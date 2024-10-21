@@ -14,12 +14,11 @@ use rguezque\Forge\Interfaces\BagInterface;
 /**
  * Represents a PHP session.
  * 
- * @method Session select(string $namespace) Select a collection of session vars into a namespace. Alias for new Session('some_session_name')
+ * @static Session create() Create or select a collection of session vars into the router session vars namespace
  * @method void start() Starts once a session
  * @method bool started() Return true if already exists an active session, otherwise false
  * @method void set(string $key, $value) Set or overwrite a session var
  * @method void get(string $key, $default = null) If exists, retrieve a session var by name, otherwise returns default
- * @method string getNamespace() Retrieve the current session vars namespace
  * @method array all() Retrieve all session vars in the current namespace
  * @method bool has(string $key) Return true if exists a session var by name
  * @method bool valid(string $key) Return true if a session var is not null and is not empty
@@ -35,26 +34,31 @@ class Session implements ArgumentsInterface, BagInterface {
      * 
      * @var string
      */
-    private $namespace;
+    private const NAMESPACE = 'ROUTER_SESSION_VARS';
+
+    /**
+     * Store the singleton instance
+     * 
+     * @var Session
+     */
+    private static $instance;
 
     /**
      * Initialize a session
-     * 
-     * @param string $namespace Session vars namespace
      */
-    public function __construct(string $namespace) {
-        $this->start();
-        $this->namespace = trim($namespace);
-    }
+    private function __construct() {}
 
     /**
-     * Select a collection of session vars into a namespace. Alias for new Session('some_session_name')
+     * Create or select a collection of session vars into the router session vars namespace
      * 
-     * @param string $namespace Namespace for session vars
      * @return Session
      */
-    public static function select(string $namespace): Session {
-        return new Session($namespace);
+    public static function create(): Session {
+        if(!self::$instance) {
+            self::$instance = new Session();
+        }
+
+        return self::$instance;
     }
 
     /**
@@ -84,9 +88,9 @@ class Session implements ArgumentsInterface, BagInterface {
      * @param mixed $value Variable value
      * @return void
      */
-    public function set(string $key, $value): void {
+    public function set(string $key, mixed $value): void {
         $this->start();
-        $_SESSION[$this->namespace][$key] = $value;
+        $_SESSION[Session::NAMESPACE][$key] = $value;
     }
 
     /**
@@ -96,7 +100,7 @@ class Session implements ArgumentsInterface, BagInterface {
      * @param mixed $value Variable value
      * @return void
      */
-    public function __set(string $key, $value): void {
+    public function __set(string $key, mixed $value): void {
         $this->set($key, $value);
     }
 
@@ -107,9 +111,9 @@ class Session implements ArgumentsInterface, BagInterface {
      * @param mixed $default Default value to return
      * @return mixed
      */
-    public function get(string $key, $default = null) {
+    public function get(string $key, mixed $default = null) {
         $this->start();
-        return $this->has($key) ? $_SESSION[$this->namespace][$key] : $default;
+        return $this->has($key) ? $_SESSION[Session::NAMESPACE][$key] : $default;
     }
 
     /**
@@ -123,22 +127,13 @@ class Session implements ArgumentsInterface, BagInterface {
     }
 
     /**
-     * Retrieve the current session vars namespace
-     * 
-     * @return string
-     */
-    public function getNamespace():string {
-        return $this->namespace;
-    }
-
-    /**
      * Retrieve all session vars in the current namespace
      * 
      * @return array
      */
     public function all(): array {
         $this->start();
-        return (array) $_SESSION[$this->namespace];
+        return (array) $_SESSION[Session::NAMESPACE];
     }
 
     /**
@@ -149,7 +144,7 @@ class Session implements ArgumentsInterface, BagInterface {
      */
     public function has(string $key): bool {
         $this->start();
-        return array_key_exists($this->namespace, $_SESSION) && array_key_exists($key, $_SESSION[$this->namespace]);
+        return array_key_exists(Session::NAMESPACE, $_SESSION) && array_key_exists($key, $_SESSION[Session::NAMESPACE]);
     }
 
     /**
@@ -160,7 +155,7 @@ class Session implements ArgumentsInterface, BagInterface {
      */
     public function valid(string $key): bool {
         $this->start();
-        return $this->has($key) && !empty($_SESSION[$this->namespace][$key]) && !is_null($_SESSION[$this->namespace][$key]);
+        return $this->has($key) && !empty($_SESSION[Session::NAMESPACE][$key]) && !is_null($_SESSION[Session::NAMESPACE][$key]);
     }
 
     /**
@@ -170,7 +165,7 @@ class Session implements ArgumentsInterface, BagInterface {
      */
     public function count(): int {
         $this->start();
-    	return sizeof($_SESSION[$this->namespace]);
+    	return sizeof($_SESSION[Session::NAMESPACE]);
     }
 
     /**
@@ -181,7 +176,7 @@ class Session implements ArgumentsInterface, BagInterface {
      */
     public function remove(string $key): void {
         $this->start();
-        unset($_SESSION[$this->namespace][$key]);
+        unset($_SESSION[Session::NAMESPACE][$key]);
     }
 
     /**
@@ -190,7 +185,7 @@ class Session implements ArgumentsInterface, BagInterface {
      * @return void
      */
     public function clear(): void {
-        $_SESSION[$this->namespace] = [];
+        $_SESSION[Session::NAMESPACE] = [];
     }
 
     /**
@@ -223,7 +218,7 @@ class Session implements ArgumentsInterface, BagInterface {
      */
     public function __toString(): string {
         $this->start();
-        return sprintf('<pre>%s</pre>', print_r($_SESSION[$this->namespace], true));
+        return sprintf('<pre>%s</pre>', print_r($_SESSION[Session::NAMESPACE], true));
     }
 
 }

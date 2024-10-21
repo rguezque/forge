@@ -58,7 +58,7 @@ class Bag implements BagInterface, JsonSerializable {
      * @param mixed $default Value to return if the parameter isn't found
      * @return mixed
      */
-    public function get(string $key, $default = null) {
+    public function get(string $key, mixed $default = null) {
         return $this->has($key) 
         ? (is_array($this->bunch[$key]) ? new Bag($this->bunch[$key]) : $this->bunch[$key]) 
         : $default ;
