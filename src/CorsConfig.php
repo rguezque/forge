@@ -36,6 +36,19 @@ class CorsConfig {
     private $default_headers = ['Content-Type', 'Accept', 'Authorization'];
 
     /**
+     * Initialize the cors configuration for allowed origins
+     * 
+     * @param array $cors_origins Origins configuration array
+     */
+    public function __construct(array $cors_origins = []) {
+        if([] !== $cors_origins) {
+            foreach($cors_origins as $origin => $config) {
+                $this->addOrigin($origin, $config['methods'] ?? [], $config['headers'] ?? []);
+            }
+        }
+    }
+
+    /**
      * Add an allowed origin
      * 
      * @param string $origin Allowed domain url
