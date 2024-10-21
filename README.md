@@ -12,7 +12,6 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
 - [Routes Group](#routes-group)
 - [Controllers](#controllers)
 - [Using attributes to define routes](#using-attributes-to-define-routes)
-- [Add namespaces](#add-namespaces)
 - [Engine](#engine)
   - [Application Engine](#application-engine)
   - [Json Engine](#json-engine)
@@ -31,6 +30,7 @@ Un liviano y básico router php para proyectos rápidos y pequeños.
   - [The `Bag` class](#the-bag-class)
   - [The `Arguments` class](#the-arguments-class)
   - [The `Globals` class](#the-globals-class)
+  - [The `Session` class](#the-session-class)
 - [Views](#views)
   - [Template](#template)
   - [Arguments](#arguments)
@@ -499,14 +499,19 @@ Emitter::emit($response);
 Esta clase permite crear contenedores e inyectar dependencias. Cuenta con cinco métodos:
 
 - `Injector::add`: Recibe el nombre de la dependencia y el nombre de la clase a instanciar así como los parámetros a inyectar. Si solo se envía la clase a instanciar, se toma el nombre de la clase como el nombre de dicha dependencia. También se permite agregar un `Closure` o un método estático como dependencia, en cuyo caso es obligatorio asignar un nombre.
-- `Injector::addParameter`: Permite agregar un parámetro a una clase agregada al contenedor.
-- `Injector::addParameters`: Permite agregar varios parámetros a una clase agregada al contenedor a través de un array.
+
 - `Injector::get`: Recupera una dependencia por su nombre. Opcionalmente puede recibir como segundo argumento un *array* con argumentos utilizados por la dependencia solicitada, esto es útil cuando la dependencia es una función o método estático cuyo resultado dependerá de parámetros enviados al momento de llamarla. 
 
-En el caso de que la dependencia sea una clase, se devolverá una instancia de esta, y si se mandan argumentos adicionales se inyectarán también al constructor, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
+  En el caso de que la dependencia sea una clase, se devolverá una instancia de esta, y si se mandan argumentos adicionales se inyectarán también al constructor, de igual forma es útil cuando la clase recibirá algunos argumentos que podrían ser opcionales o cuyo valor dependerá de la programación al momento de solicitarla.
+
 - `Injector::has`: Verifica si existe una dependencia por su nombre.
 
-También se puede usar como métodos estáticos a través del *facade* `Container`.
+Si se agrega como dependencia una clase `Injector::add` devolverá una instancia de `Dependency` que permite encadenamiento para ejecutar alguno de los siguientes métodos para definir parámetros de dicha clase que luego serán inyectados como argumentos al recuperarla con `Injector::get`:
+
+- `Dependency::addParameter`: Permite agregar un parámetro a una clase agregada al contenedor.
+- `Dependency::addParameters`: Permite agregar varios parámetros a una clase agregada al contenedor a través de un array.
+
+Los métodos de `Injector` también se pueden llamar como métodos estáticos a través del *facade* `Container`.
 
 ```php
 Container::add(FooController::class);
@@ -672,7 +677,7 @@ Ambas clases, `Bag` y `Arguments`,  sirven para manipular una colección de dato
 
 Esta clase contiene métodos de solo lectura, es decir, solo puede evaluar y consultar los parámetros que almacena.
 
-- `get(string $key)`: Recupera un parámetro por nombre. También se puede recuperar un parámetro en contexto de objeto gracias al método mágico `Bag::__get`.
+- `get(string $key, mixed $default = null)`: Recupera un parámetro por nombre, si no existe devuelve el valor default especificado. También se puede recuperar un parámetro en contexto de objeto gracias al método mágico `Bag::__get` (De esta forma devolverá `null` si no existe).
 - `all()`: Devuelve el array de parámetros.
 - `has(string $key)`: Devuelve `true` si un parámetro existe.
 - `valid(string $key)`: Devuelve `true` si un parámetro no esta vació y no tiene valor `null`.
@@ -684,13 +689,39 @@ Esta clase contiene métodos de solo lectura, es decir, solo puede evaluar y con
 
 Esta clase *extiende* a la clase padre `Bag` heredando sus métodos y además contiene métodos de escritura, es decir, puede crear, modificar y eliminar los parámetros que almacena.
 
-- `set(string $key, $value)`: Permite crear o sobrescribir un parámetro de la colección de datos. También se puede crear un parámetro en contexto de objeto gracias al método mágico `Arguments::__set`.
+- `set(string $key, mixed $value)`: Permite crear o sobrescribir un parámetro de la colección de datos. También se puede crear un parámetro en contexto de objeto gracias al método mágico `Arguments::__set`.
 - `remove(string $key)`: Elimina un parámetro por su nombre.
 - `clear()`: Elimina todos los parámetros.
 
 ### The `Globals` Class
 
 Almacena y proporciona acceso a las variables de `$GLOBALS` mediante métodos estáticos. Tiene los mismos métodos de `Bag` y `Arguments`, excepto `Bag::keys` y `Bag::gettype`
+
+### The `Session` Class
+
+La clase `Session` permite manipular las variabes de `$_SESSION` a través de una instancia singleton. Los métodos disponibles son:
+
+- `create()`: Inicializa o selecciona el *namespace* donde se almacenan las variables de sesión. Devuelve una instancia singleton de `Session`.
+- `start()`: Inicia o retoma una sesión activa. Siempre debe invocarse antes de los demás métodos (Permite encadenamiento `$session->start()->get('foo')`).
+- `started()`: Devuelve `true` si una sesión está activa, `false` en caso contrario.
+- `set(string $key, mixed $value)`: Crea o sobrescribe una variable de sesión.
+- `get(string $key, mixed $default = null)`: Devuelve una variable por nombre; si no existe devuelve el valor default especificado (`null` asignado por default).
+- `has(string $key)`: Devuelve `true` si una variable existe; `false` en caso contrario.
+- `valid(string $key)`: Devuelve `true` si una variable existe y además no es nula y no está vacía; `false` en caso contrario.
+- `count()`: Devuelve la cantidad de variables existentes.
+- `remove(string $key)`: Elimina una variable por nombre.
+- `clear()`: Elimina todas las variables.
+- `destroy()`: Destruye la sesión activa.
+
+```php
+$session = Session::create();
+
+$session->set('foo', 'bar'); // Crea una variable
+$session->get('foo'); // Recupera una variable
+```
+
+>[!NOTE]
+>Aunque `Session::start` se invoca automáticmente al llamar cualquiera de los demás métodos, se deja en acceso público.
 
 ## Views
 
@@ -865,8 +896,19 @@ use rguezque\Forge\Router\CorsConfig;
 
 $router = new Router;
 
-// Ejemplo
-$cors = new CorsConfig;
+// Agregar origenes desde el constructor
+$cors = new CorsConfig([
+    'http://localhost:3000' => [
+        'methods' => ['GET', 'PATCH'],
+        'headers' => ['Authorization']
+    ],
+    'http://foo.net' => [
+        'methods' => ['GET', 'POST'. 'DELETE'],
+        'headers' => ['Authorization', 'Accept']
+    ]
+]);
+
+// Utilizando el método CorsConfig::addOrigin para agregar más origenes
 $cors->addOrigin(
     '(http(s)://)?(www\.)?localhost:3000', // origen
     ['GET', 'POST'], // métodos de petición aceptados
