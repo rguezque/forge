@@ -22,6 +22,15 @@ class RedirectResponse extends Response {
         parent::__construct('', Response::HTTP_SEE_OTHER, ['location' => $uri]);
     }
 
+    /**
+     * Do nothing
+     * 
+     * @deprecated
+     */
+    public function withContent(string $content): Response {
+        return $this;
+    }
+
 }
 
 ?>

@@ -30,6 +30,15 @@ class JsonResponse extends Response {
         );
     }
 
+    /**
+     * Do nothing
+     * 
+     * @deprecated
+     */
+    public function withContent(string $content): Response {
+        return $this;
+    }
+
 }
 
 ?>
